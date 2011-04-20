@@ -1,17 +1,22 @@
-google.load('visualization', '1');
+google.load('visualization', '1', {'packages':['table']});
 
-function changeData(scorer) {
+function changeData(type) {
   var whereClause = "";
-  if(scorer) {
-    whereClause = " WHERE 'Scoring Team' LIKE '" + scorer + "'";
+  if(type) {
+    whereClause = " WHERE 'Sub-category' LIKE '" + type + "'";
   }
-  var queryText = encodeURIComponent("SELECT 'URL' FROM 652548" + whereClause);
+  var queryText = encodeURIComponent("SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-  
+  console.log(query);
   query.send(getData);
 }
 
 function getData(response) {
+  var table = new google.visualization.Table(document.getElementById('table'));
+  table.draw(response.getDataTable(), {showRowNumber: true});
+}
+
+function getDataHTML(response) {
   numRows = response.getDataTable().getNumberOfRows();
   numCols = response.getDataTable().getNumberOfColumns();
   
