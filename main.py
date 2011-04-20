@@ -29,6 +29,7 @@ class MainHandler(webapp.RequestHandler):
         path = os.path.join(os.path.dirname(__file__), 'index.html')
         self.response.out.write(template.render(path, template_values))
 
+
 def main():
     application = webapp.WSGIApplication([('/', MainHandler)],
                                          debug=True)
