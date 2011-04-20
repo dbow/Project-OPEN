@@ -15,18 +15,19 @@
 # limitations under the License.
 #
 
-import ftclient
 from google.appengine.ext import webapp
-from google.appengine.ext.webapp import util
-from sql.sqlbuilder import SQL
+from google.appengine.ext.webapp import util, template
+import os
+
 
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
-        self.response.out.write('Hello world!')
-        client = ftclient.ClientLoginFTClient("")
-        print client.query(SQL().showTables())
-
+        template_values = {
+        }
+        
+        path = os.path.join(os.path.dirname(__file__), 'index.html')
+        self.response.out.write(template.render(path, template_values))
 
 def main():
     application = webapp.WSGIApplication([('/', MainHandler)],
