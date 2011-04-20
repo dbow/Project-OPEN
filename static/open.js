@@ -1,9 +1,9 @@
 google.load('visualization', '1');
 
-function changeData(scorer) {
+function changeData(cat) {
   var whereClause = "";
-  if(scorer) {
-    whereClause = " WHERE 'Scoring Team' LIKE '" + scorer + "'";
+  if(cat && cat !== 'All') {
+    whereClause = " WHERE 'Sub-category' LIKE '" + cat + "'";
   }
   var queryText = encodeURIComponent("SELECT 'URL' FROM 652548" + whereClause);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
@@ -27,9 +27,25 @@ function getData(response) {
     }
     fusiontabledata += "<br />";
   }  
-  document.getElementById('ftdata').innerHTML = fusiontabledata;
+  document.getElementById('content').innerHTML = fusiontabledata;
+}
+
+function selectCat() {
+    changeData($(this).html());
 }
 
 $(function () {
+	var categories = [
+	   {cat: 'All'},
+	   {cat: 'Housing / Shelter'},
+	   {cat: 'AIDS Treatment / Prevention'},
+	];
+	
+	var cats = $("#cats"),
+        tmpl = cats.html();
+    
+    cats.html('');
+	$.tmpl(tmpl, categories).click(selectCat).appendTo("#cats");
+	
 	changeData();
 });
