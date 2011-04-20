@@ -1,9 +1,9 @@
 google.load('visualization', '1', {'packages':['table']});
 
-function changeData(type) {
+function changeData(cat) {
   var whereClause = "";
-  if(type) {
-    whereClause = " WHERE 'Sub-category' LIKE '" + type + "'";
+  if(cat && cat !== 'All') {
+    whereClause = " WHERE 'Sub-category' LIKE '" + cat + "'";
   }
   var queryText = encodeURIComponent("SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
@@ -32,9 +32,25 @@ function getDataHTML(response) {
     }
     fusiontabledata += "<br />";
   }  
-  document.getElementById('ftdata').innerHTML = fusiontabledata;
+  document.getElementById('content').innerHTML = fusiontabledata;
+}
+
+function selectCat() {
+    changeData($(this).html());
 }
 
 $(function () {
+	var categories = [
+	   {cat: 'All'},
+	   {cat: 'Housing / Shelter'},
+	   {cat: 'AIDS Treatment / Prevention'},
+	];
+	
+	var cats = $("#cats"),
+        tmpl = cats.html();
+    
+    cats.html('');
+	$.tmpl(tmpl, categories).click(selectCat).appendTo("#cats");
+	
 	changeData();
 });
