@@ -12,7 +12,7 @@ function changeData(cat) {
 
 function getData(response) {
   var table = new google.visualization.Table(document.getElementById('table'));
-  options = {showRowNumber: true, maxHeight: 1000, width: 740}
+  options = {showRowNumber: true, maxHeight: 1000, width: 760}
   table.draw(response.getDataTable(), options);
   setHeights();
 }
@@ -106,7 +106,7 @@ function hoverCat() {  /* haha (-danny) */
 }
 
 function setHeights() {
-    $("#rail").css('minHeight', $("#subpage").height());
+    $("#rail").css('minHeight', $("#subpage").height() - 20);
 }
 
 $(function () {
