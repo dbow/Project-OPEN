@@ -1,5 +1,7 @@
 google.load('visualization', '1', {'packages':['table']});
 
+(function () {
+
 function changeData(cat) {
   var whereClause = "";
   if(cat && cat !== 'All') {
@@ -115,3 +117,5 @@ $(function () {
 	getCategoryList();
 	setHeights();
 });
+
+}());

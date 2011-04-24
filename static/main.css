@@ -42,11 +42,11 @@ body {
 
 h1 {
     margin: 10px 0;
-    color: #444;
+    color: #fff;
     font-weight: 900;
     font-size: 60px;
     letter-spacing: -3px;
-    -webkit-text-stroke: #fff 2px;
+    -webkit-text-stroke: #999 2px;
 }
 
 h3 {
