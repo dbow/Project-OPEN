@@ -1,39 +1,18 @@
 /* reset */
-html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}a,a:visited{color:inherit;text-decoration:none}
 
 /* clearfix */
 .clearfix:after{content:".";display:block;clear:both;visibility:hidden;line-height:0;height:0;}.clearfix{display:inline-block;}html[xmlns] .clearfix{display:block;}* html .clearfix{height:1%;}div.clearfix{display:block;}
 
 /* main */
 html {
-  background-color:#CCCCCC;
-  width:auto;
-  height:auto;
+  background-color: #ddf;
+  width: auto;
+  height: auto;
 }
 
-.hover {
-  background-color:#FF00FF;
-  color:#FFFFFF;
-  cursor:pointer
-}
 
-h1 {
-  color:#FF00FF;
-  font-weight: bold;
-  font-size: 3em;
-}
-
-h3 {
-  padding: 10px;
-  text-align:center;
-  font-weight: bold;
-}
-
-form {
-  padding-bottom:10px;
-}
-
-/* Update to BL URLs at launch on BL namespace */
+/* typography */
 @font-face {
       font-family: "DIN-Bold";
       src: url("DIN-Bold.ttf");
@@ -45,75 +24,169 @@ form {
 .DIN-Bold { font-family: "DIN-Bold", serif }
 .DIN-Reg { font-family: "DIN-Reg", serif }
 
+body {
+    font-family: sans-serif;
+    font-size: 12px;
+    color: #333;
+}
+
+.ui-impr {
+    text-shadow: 0 -1px 1px #000;
+}
+.ui-pop {
+    text-shadow: 0 1px 1px #000;
+}
+
+h1 {
+    margin: 10px 0;
+    color: #444;
+    font-weight: 900;
+    font-size: 60px;
+    letter-spacing: -3px;
+    -webkit-text-stroke: #fff 2px;
+}
+
+h3 {
+    margin-bottom: 10px;
+    border-bottom: 1px solid #999;
+    font-weight: bold;
+    font-size: 16px;
+    color: #666;
+}
+
+form {
+  padding-bottom:10px;
+}
+input[type=text] {
+    float: left;
+    width: 150px;
+    padding: 4px 6px;
+    border: 1px solid #999;
+    border-right: none;
+    outline: none;
+    -webkit-box-shadow: 2px 2px 6px rgba(0,0,0,0.3) inset;
+}
+input[type=text]:active {
+    
+}
+
+/* buttons */
+
+.ui-button {
+    float: left;
+    padding: 4px 6px;
+    border: 1px solid #e29700;
+    background: #FFCC66;
+    background: -webkit-gradient(linear, 0 0, 0 100%, from(#FFCC66), to(#ef9f00));
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 -1px 1px #e29700;
+    cursor: pointer;
+}
+.ui-button:hover {
+    opacity: 0.8;
+}
+.ui-button:active {
+    background: #FFCC66
+}
+
+/* Update to BL URLs at launch on BL namespace */
+
 #header {
-  margin: 0 auto;
   position: relative;
-  width: 1000px;
-  border: 2px solid gray;
 }
 
-ul#nav {
-width:624px;
-border: 2px solid gray;
-list-style-type:none;
-margin-left:auto;
-margin-right:auto;
-padding:0;
-overflow:hidden;
+#nav {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-ul#nav li {
-  float:left;
-}
-
-ul#nav li a:link,a:visited {
-  display:block;
-  width:200px;
-  padding:4px;
-  font-weight:bold;
-  color:#FFFFFF;
-  background-color:#FFCC66;
-  text-align:center;
-  text-decoration:none;
-}
-
-ul#nav li a:hover {
-  background-color:#CC9933;
-}
+    #nav li {
+    }
+    
+    #nav a {
+        float: left;
+        margin-right: -1px;
+        width: 160px;
+        padding: 4px 0 3px;
+        /* border-radius: 5px; */
+        border: 1px solid #e29700;
+        background: #FFCC66;
+        font-weight: bold;
+        font-size: 16px;
+        color: #fff;
+        text-shadow: 0 -1px 1px #e29700;
+    }
+    
+    #nav a:hover {
+        background: -webkit-gradient(linear, 0 0, 0 100%, from(#FFCC66), to(#ef9f00));
+    }
+    #nav a:active {
+        /* background: -webkit-gradient(linear, 0 0, 0 100%, from(#ef9f00), to(#FFCC66)); */
+        background: #FFCC66;
+    }
 
 #page {
+    position: relative;
     margin: 0 auto;
     width: 1000px;
-    position: relative;
 }
+    #subpage {
+        background: #fff;
+        overflow: hidden;
+    }
 
 #rail {
-    width: 300px;
-    border: 2px solid gray;
-    float:left;
+    position: relative;
+    z-index: 2;
+    float: left;
+    width: 220px;
+    padding: 10px;
+    -webkit-box-shadow: 1px 0 4px rgba(0,0,0,0.3);
 }
-
-#filters {
-  border: 2px solid gray;
-}
-
-#about {
-  border: 2px solid gray;
-}
-
-#about ul {
-  padding-top:10px;
-  list-style-type: disc;
-  padding-left:5px;
-}
+    #filters {
+    }
+    
+    #location {
+        margin-top: 5px;
+    }
+    
+    #cats {
+        margin: 10px 0 0 -10px;
+    }
+        #cats .cat {
+            padding: 3px 10px 2px;
+        }
+        #cats .cat.on {
+            background: #99b3cc;
+        }
+        #cats .cat:hover {
+            background-color: #FF00FF;
+            color: #fff;
+            cursor: pointer
+        }
+    
+    #about {
+        margin-top: 10px;
+        padding-top: 10px;
+        color: #666;
+    }
+        #about ul {
+            padding-top: 10px;
+            list-style-type: square;
+            margin-left: 15px;
+        }
+        #about li {
+            list-style: square;
+        }
 
 #content {
-    float:left;
-    width: 680px;
-    border: 2px solid gray;
+    float: left;
+    width: 740px;
+    padding: 10px;
 }
-
-#map {
-  width:680px;
-  height:250px;
-}
+    #map {
+      width: 100%;
+      height:250px;
+    }

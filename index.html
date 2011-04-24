@@ -4,51 +4,54 @@
 		<title>Project OPEN San Francisco</title>
 		<link type="text/css" rel="stylesheet" href="static/main.css" />
 	</head>
-	<body>
-		<div id="header">
-			<h1><marquee>projectOPEN San Francisco</marquee></h1> <!-- Remove marquee :P -->
-			<ul id="nav">
-				<li><a href="#">OPEN Map</a></li>
-				<li><a href="#">Add a resource</a></li>
-				<li><a href="#">Help</a></li>
-			</ul>
-		</div>
-		
+	<body>		
 		<div id="page">
-			<div id="rail">
-				<h3>What are you looking for?</h3>
-				<div id="filters">
-					<div id="search">
-						<form action="#" id="search">
-							<input type="text" />
-							<input type="submit" value="Search">
-						</form>
-					</div>
-					<div id="location">
-						<form action="#" id="location">
-							Near: <input type="text" value="Current location" />
-							<input type="submit" value="Update">
-						</form>
-					</div>
-					<div id="cats">
-					    <div>${cat}</div>
-					</div>
-				</div>
-				<h3>About Project OPEN</h3>
-				<div id="about">
-					<p>Project OPEN connects people to the local community and the open resources of San Francisco.  The places on the Project OPEN map share the following values:</p>
-					<ul>
-						<li>Open access: open to public, free, accessible</li>
-						<li>Open-minded: welcoming to all</li>
-						<li>Open books: transparency into operations, funding, etc.</li>
-						<li>Open source: making the info available to other orgs</li>
-					</ul>		
-				</div>
+			<div id="header" class="clearfix">
+				<h1>projectOPEN San Francisco</h1>
+				<ul id="nav">
+					<li class="ui-pop"><a href="#">OPEN Map</a></li>
+					<li class="ui-pop"><a href="#">Add a resource</a></li>
+					<li class="ui-pop"><a href="#">Help</a></li>
+				</ul>
 			</div>
-			<div id="content">
-				<h3>Resources</h3>
-				<div id="map"></div>
-				<div id="table"></div>
+
+			<div id="subpage">
+				<div id="rail" class="clearfix">
+					<h3>What are you looking for?</h3>
+					<div id="filters">
+						<div id="search" class="clearfix">
+							<form id="search" action="#">
+								<input type="text" />
+								<input type="submit" class="ui-button" value="Search">
+							</form>
+						</div>
+						<div id="location" class="clearfix">
+							<div>Near:</div>
+							<form action="#" id="location">
+								<input type="text" value="Current location" />
+								<input type="submit" class="ui-button" value="Update">
+							</form>
+						</div>
+						<div id="cats">
+						    <div class="cat">${cat}</div>
+						</div>
+					</div>
+					<div id="about">
+					<h3>About Project OPEN</h3>
+						<p>Project OPEN connects people to the local community and the open resources of San Francisco.  The places on the Project OPEN map share the following values:</p>
+						<ul>
+							<li>Open access: open to public, free, accessible</li>
+							<li>Open-minded: welcoming to all</li>
+							<li>Open books: transparency into operations, funding, etc.</li>
+							<li>Open source: making the info available to other orgs</li>
+						</ul>		
+					</div>
+				</div>
+				<div id="content" class="clearfix">
+					<h3>Resources</h3>
+					<div id="map"></div>
+					<div id="table"></div>
+				</div>
 			</div>
 		</div>
 
@@ -58,7 +61,5 @@
 		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
 		<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
 		<script type="text/javascript" src="static/open.js"></script>
-		<script type="text/javascript">
-		</script>
 	</body>
 </html>

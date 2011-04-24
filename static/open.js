@@ -12,8 +12,9 @@ function changeData(cat) {
 
 function getData(response) {
   var table = new google.visualization.Table(document.getElementById('table'));
-  options = {'showRowNumber': true, 'height': 450}
+  options = {showRowNumber: true, maxHeight: 1000, width: 740}
   table.draw(response.getDataTable(), options);
+  setHeights();
 }
 
 /* An alternative presentation:
@@ -74,6 +75,7 @@ function setUpCategories(categories) {
     
     cats.html('');
 	$.tmpl(tmpl, categories).click(selectCat).mouseover(hoverCat).mouseout(hoverCat).appendTo("#cats");
+	setHeights();
 }
 
 function createMap(){
@@ -87,6 +89,7 @@ function createMap(){
 
   layer = new google.maps.FusionTablesLayer(652548);
   layer.setMap(map);
+  setHeights();
 }
 
 function selectCat() {
@@ -102,8 +105,13 @@ function hoverCat() {  /* haha (-danny) */
   }
 }
 
+function setHeights() {
+    $("#rail").css('minHeight', $("#subpage").height());
+}
+
 $(function () {
 	changeData();
 	createMap();
 	getCategoryList();
+	setHeights();
 });
