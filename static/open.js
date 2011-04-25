@@ -2,17 +2,23 @@ google.load('visualization', '1', {'packages':['table']});
 
 (function () {
 
-function changeData(cat) {
+function changeData(cat, map) {
   var whereClause = "";
   if(cat && cat !== 'All') {
     whereClause = " WHERE 'Sub-category' LIKE '" + cat + "'";
   }
+  if (map) {
+    map_bounds = map.getBounds();
+    whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
+  }
+  console.log(whereClause);
   var queryText = encodeURIComponent("SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
   query.send(getData);
 }
 
 function getData(response) {
+  console.log(response.getDataTable());
   var table = new google.visualization.Table(document.getElementById('table'));
   options = {showRowNumber: true, maxHeight: 1000, width: 760}
   table.draw(response.getDataTable(), options);
@@ -92,7 +98,12 @@ function createMap(){
   layer = new google.maps.FusionTablesLayer(652548);
   layer.setMap(map);
   setHeights();
+
+  google.maps.event.addListener(map, 'bounds_changed', function() {
+      changeData(null, map);
+  });
 }
+
 
 function selectCat() {
     changeData($(this).html());
