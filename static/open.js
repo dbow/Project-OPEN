@@ -4,10 +4,13 @@ var OP = {};
 
 (function () {
 
-function changeData(cat, map) {
+var map;
+var initial_bounds;
+
+function changeData(update_map) {
   var whereClause = "";
 
-  if (map) {
+  if (update_map) {
     map_bounds = map.getBounds();
     whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
   }
@@ -32,28 +35,6 @@ function getData(response) {
   table.draw(response.getDataTable(), options);
   setHeights();
 }
-
-/* An alternative presentation:
-
-function getData(response) {
-  numRows = response.getDataTable().getNumberOfRows();
-  numCols = response.getDataTable().getNumberOfColumns();
-  
-  fusiontabledata = "<b>";
-  for(i = 0; i < numCols; i++) {
-    fusiontabledata += response.getDataTable().getColumnLabel(i) + ",";
-  }
-  fusiontabledata += "</b><br />";
-  
-  for(i = 0; i < numRows; i++) {
-    for(j = 0; j < numCols; j++) {
-      fusiontabledata += response.getDataTable().getValue(i, j) + ", ";
-    }
-    fusiontabledata += "<br />";
-  }  
-  document.getElementById('content').innerHTML = fusiontabledata;
-} */
-
 
 function getCategoryList() {
   var queryText = encodeURIComponent("SELECT 'Sub-category' FROM 652548");
@@ -90,15 +71,71 @@ function createMap(){
     zoom: 12,
     mapTypeId: 'roadmap'
   });
+  initial_bounds = map.getBounds();
 
   layer = new google.maps.FusionTablesLayer(652548);
   layer.setMap(map);
   setHeights();
 
   google.maps.event.addListener(map, 'bounds_changed', function() {
-      changeData(map);
+      changeData(true);
   });
 }
+
+
+function updateMap(location) {
+  if (location == "Current location") {
+    // Try W3C Geolocation (Preferred)
+    if(navigator.geolocation) {
+      browserSupportFlag = true;
+      navigator.geolocation.getCurrentPosition(function(position) {
+        initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
+        map.setCenter(initialLocation);
+        console.log(initialLocation);
+      }, function() {
+        handleNoGeolocation(browserSupportFlag);
+      });
+    }
+    // Browser doesn't support Geolocation
+    else {
+      browserSupportFlag = false;
+      handleNoGeolocation(browserSupportFlag);
+    }
+  }
+  else {
+    geocoder = new google.maps.Geocoder();
+    geocoder.geocode( { 'address': location,
+                        'bounds': initial_bounds,
+                        'region': 'US',
+                        }, function(results, status) {
+      if (status == google.maps.GeocoderStatus.OK) {
+        map.setCenter(results[0].geometry.location);
+        var marker = new google.maps.Marker({
+            map: map, 
+            position: results[0].geometry.location
+        });
+      } else {
+        alert("Geocode was not successful for the following reason: " + status);
+      }
+    }); 
+  }
+  function handleNoGeolocation(errorFlag) {
+    if (errorFlag == true) {
+      alert("Geolocation service failed.");
+      initialLocation = sf;
+    } else {
+      alert("Your browser doesn't support geolocation.");
+      initialLocation = sf;
+    }
+    map.setCenter(initialLocation);
+  }
+}
+
+$('#location').submit(function() {
+  updateMap($("#location-form input:first").val());
+  return false;
+});
+
 
 OP.performSearch = function() {
   changeData();
