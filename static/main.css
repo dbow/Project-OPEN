@@ -170,6 +170,7 @@ input[type=text]:active {
         }
         #cats .cat.on {
             background: #99b3cc;
+            color: #fff;
         }
         #cats .cat:hover {
             background-color: #FF00FF;

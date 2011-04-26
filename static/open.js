@@ -1,15 +1,20 @@
 google.load('visualization', '1', {'packages':['table']});
 
+var OP = {};
+
 (function () {
 
-function changeData(cat) {
+function changeData(cats) {
   var whereClause = "";
-  if(cat && cat !== 'All') {
-    whereClause = " WHERE 'Sub-category' LIKE '" + cat + "'";
+  
+  if (cats.length) {
+    whereClause = cats.join(' ');
+    whereClause = " WHERE 'Sub-category' = '" + whereClause + "'";
   }
+  
   var queryText = encodeURIComponent("SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-  query.send(getData);
+  query.send(OP.Data.receive);
 }
 
 function getData(response) {
@@ -62,22 +67,10 @@ function parseList(response) {
       list_item = {'cat': category_list[i]};
       final_list.push(list_item);     
   }
-  setUpCategories(final_list);
+  OP.Cats.populate(final_list);
 }
 
 function setUpCategories(categories) {
- /* 	var categories = [
-	   {cat: 'All'},
-	   {cat: 'Housing / Shelter'},
-	   {cat: 'AIDS Treatment / Prevention'},
-	]; */
-	
-	var cats = $("#cats"),
-        tmpl = cats.html();
-    
-    cats.html('');
-	$.tmpl(tmpl, categories).click(selectCat).mouseover(hoverCat).mouseout(hoverCat).appendTo("#cats");
-	setHeights();
 }
 
 function createMap(){
@@ -94,10 +87,6 @@ function createMap(){
   setHeights();
 }
 
-function selectCat() {
-    changeData($(this).html());
-}
-
 function hoverCat() {  /* haha (-danny) */
   if ($(this).hasClass("hover")) {
     $(this).removeClass("hover");
@@ -111,8 +100,106 @@ function setHeights() {
     $("#rail").css('minHeight', $("#subpage").height() - 20);
 }
 
+OP.Cats = (function () {
+    var me = {},
+    
+    // functions
+    _click,
+    
+    // data
+    _selected = {};
+    
+    me.populate = function (categories) {
+        /* 	var categories = [
+    	   {cat: 'All'},
+    	   {cat: 'Housing / Shelter'},
+    	   {cat: 'AIDS Treatment / Prevention'},
+    	]; */
+    	
+    	var cats = $("#cats"),
+            tmpl = cats.html();
+        
+        cats.html('');
+    	$.tmpl(tmpl, categories).click(_click).appendTo("#cats");
+    	setHeights();
+    };
+    
+    _click = function () {
+        var el = $(this);
+        
+        if (el.html() === 'All') {
+            el.siblings().removeClass('on');
+            _selected = {};
+        }
+        else if (el.hasClass('on')) {
+            el.removeClass('on');
+            delete _selected[el.html()];
+        }
+        else {
+            $(this).addClass('on');
+            _selected[el.html()] = 1;
+        }
+        
+        OP.Data.filter(OP.Util.toArrayKeys(_selected));
+        //changeData(OP.Util.toArrayKeys(_selected));
+    };
+    
+    return me;
+}());
+
+OP.Data = (function () {
+    var me = {},
+    
+    // data
+    _cache,
+    _table;
+    
+    me.getCache = function () {
+        return _cache.getDataTable();
+    };
+    me.getTable = function () {
+        return _table;
+    };
+    
+    me.filter = function (cats) {
+        cats = cats || [];
+        
+        var table = _cache.getDataTable();
+        
+        table.getFilteredRows([{column: 1, value: 'Food'}]);
+    
+        _table = new google.visualization.Table(document.getElementById('table'));
+        options = {showRowNumber: true, maxHeight: 1000, width: 760}
+        _table.draw(_cache.getDataTable(), options);
+        setHeights();
+    };
+    
+    me.receive = function (response) {
+        _cache = response;
+        me.filter();
+    };
+    
+    return me;
+}());
+
+OP.Util = (function () {
+    var me = {};
+    
+    me.toArrayKeys = function (obj) {
+        var arr = [];
+    
+        for (var i in obj) {
+            arr.push(i);
+        }
+        
+        return arr;
+    };
+    
+    return me;
+}());
+
 $(function () {
-	changeData();
+	changeData([]);
 	createMap();
 	getCategoryList();
 	setHeights();
