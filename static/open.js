@@ -6,6 +6,7 @@ var OP = {};
 
 var map;
 var initial_bounds;
+var sf;
 
 function changeData(update_map) {
   var whereClause = "";
@@ -64,6 +65,7 @@ function setUpCategories(categories) {
 }
 
 function createMap(){
+
   var sf = new google.maps.LatLng(37.77493,-122.419416);
 
   map = new google.maps.Map(document.getElementById('map'), {
@@ -71,7 +73,6 @@ function createMap(){
     zoom: 12,
     mapTypeId: 'roadmap'
   });
-  initial_bounds = map.getBounds();
 
   layer = new google.maps.FusionTablesLayer(652548);
   layer.setMap(map);
@@ -79,6 +80,12 @@ function createMap(){
 
   google.maps.event.addListener(map, 'bounds_changed', function() {
       changeData(true);
+
+  if(!initial_bounds) {
+    initial_bounds = map.getBounds();
+    console.log(initial_bounds.toString()); 
+  }
+
   });
 }
 
@@ -91,7 +98,6 @@ function updateMap(location) {
       navigator.geolocation.getCurrentPosition(function(position) {
         initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
         map.setCenter(initialLocation);
-        console.log(initialLocation);
       }, function() {
         handleNoGeolocation(browserSupportFlag);
       });
@@ -104,6 +110,8 @@ function updateMap(location) {
   }
   else {
     geocoder = new google.maps.Geocoder();
+    console.log(initial_bounds.toString());
+
     geocoder.geocode( { 'address': location,
                         'bounds': initial_bounds,
                         'region': 'US',
