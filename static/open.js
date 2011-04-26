@@ -211,6 +211,12 @@ OP.Data = (function () {
         
         $("#table").html(html);
         
+        $("#table .name a").hover(function () {
+        	$(this).parent().siblings('.info').fadeIn();
+       	}, function () {
+       		$(this).parent().siblings('.info').stop(true, true).fadeOut();
+       	});
+        
 		//$("#table").html( $.tmpl('table', _cache.table.rows) );
         setHeights();
     };

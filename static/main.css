@@ -209,6 +209,10 @@ a:hover {
       height: 250px;
     }
     
+    #table .row {
+    	position: relative;
+    }
+    
     #table .row:nth-child(2n+1) {
     	background: #eeeeff;
     }
@@ -217,12 +221,22 @@ a:hover {
     	float: left;
     	padding: 2px 5px;
     }
-    #table .cell0 {
+    #table .name {
     	width: 200px;
     }
-    #table .cell1 {
+    #table .address {
     	width: 200px;
     }
-    #table .cell2 {
+    #table .services {
     	width: 330px;
+    }
+    #table .info {
+    	display: none;
+    	position: absolute;
+    	z-index: 3;
+    	left: 210px;
+    	width: 400px;
+    	border: 1px solid #666;
+    	background: #fff;
+    	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
