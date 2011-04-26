@@ -4,20 +4,27 @@ var OP = {};
 
 (function () {
 
-function changeData(cats) {
+function changeData(cat, map) {
   var whereClause = "";
   
   if (cats.length) {
     whereClause = cats.join(' ');
     whereClause = " WHERE 'Sub-category' = '" + whereClause + "'";
   }
+
+  if (map) {
+    map_bounds = map.getBounds();
+    whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
+  }
   
+  console.log(whereClause);
   var queryText = encodeURIComponent("SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
   query.send(OP.Data.receive);
 }
 
 function getData(response) {
+  console.log(response.getDataTable());
   var table = new google.visualization.Table(document.getElementById('table'));
   options = {showRowNumber: true, maxHeight: 1000, width: 760}
   table.draw(response.getDataTable(), options);
@@ -85,6 +92,14 @@ function createMap(){
   layer = new google.maps.FusionTablesLayer(652548);
   layer.setMap(map);
   setHeights();
+
+  google.maps.event.addListener(map, 'bounds_changed', function() {
+      changeData(null, map);
+  });
+}
+
+function selectCat() {
+    changeData($(this).html());
 }
 
 function hoverCat() {  /* haha (-danny) */
