@@ -6,21 +6,24 @@ var OP = {};
 
 function changeData(cat, map) {
   var whereClause = "";
-  
-  if (cats.length) {
-    whereClause = cats.join(' ');
-    whereClause = " WHERE 'Sub-category' = '" + whereClause + "'";
-  }
 
   if (map) {
     map_bounds = map.getBounds();
     whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
   }
   
-  console.log(whereClause);
-  var queryText = encodeURIComponent("SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause);
-  var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-  query.send(OP.Data.receive);
+  var queryText = "SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause;
+  
+  $.ajax({
+  	url: 'http://www.google.com/fusiontables/api/query',
+  	data: {sql: queryText},
+  	dataType: 'jsonp',
+  	jsonp: 'jsonCallback',
+  	success: OP.Data.receive
+  });
+  
+  //var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
+  //query.send(OP.Data.receive);
 }
 
 function getData(response) {
@@ -167,7 +170,10 @@ OP.Data = (function () {
     
     // data
     _cache,
-    _table;
+    _table,
+    _tmpl = $("#table").template('table');
+    
+    $("#table").html('');
     
     me.getCache = function () {
         return _cache.getDataTable();
@@ -177,20 +183,39 @@ OP.Data = (function () {
     };
     
     me.filter = function (cats) {
-        cats = cats || [];
-        
-        var table = _cache.getDataTable();
-        
-        table.getFilteredRows([{column: 1, value: 'Food'}]);
+    	var html = '',
+    		rows = _cache.table.rows,
+    		catsKeyed = {},
+    		i, j;
     
-        _table = new google.visualization.Table(document.getElementById('table'));
-        options = {showRowNumber: true, maxHeight: 1000, width: 760}
-        _table.draw(_cache.getDataTable(), options);
+        if (cats && cats.length) {
+        	for (i = 0; i < cats.length; i++) {
+        		catsKeyed[cats[i]] = 1;
+        	}
+        }
+        else {
+        	cats = null;
+        }
+        
+        for (var i in rows) {
+        	if (!cats || catsKeyed[rows[i][1]]) {
+	        	html += '<div class="row clearfix">';
+	        	for (var j in rows[i]) {
+	        		html += '<div class="cell cell' + j + '">' + rows[i][j] + '</div>';
+	        	}
+	        	html += '</div>';
+        	}
+        }
+        
+        $("#table").html(html);
+        
+		//$("#table").html( $.tmpl('table', _cache.table.rows) );
         setHeights();
     };
     
     me.receive = function (response) {
         _cache = response;
+        console.log(_cache);
         me.filter();
     };
     
@@ -214,7 +239,6 @@ OP.Util = (function () {
 }());
 
 $(function () {
-	changeData([]);
 	createMap();
 	getCategoryList();
 	setHeights();
