@@ -198,12 +198,11 @@ OP.Data = (function () {
         
         for (var i in rows) {
           if ($('#search-box').val()) {
-            var searchRegex = new RegExp('/.*' + $('#search-box').val() + '.*/i');
+            var searchRegex = new RegExp($('#search-box').val(), 'i');
             var rowMatches = false;
-            for (var field = 0; i < 6; i++) {
-              if (!searchRegex.test(rows[i][field])) {
+            for (var field = 0; field < 6; field++) {
+              if (searchRegex.test(rows[i][field])) {
                 rowMatches = true;
-                break;
               }
             }
             if (!rowMatches) {
