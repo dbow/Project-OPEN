@@ -12,7 +12,9 @@ function changeData(update_map) {
 
   if (update_map) {
     map_bounds = map.getBounds();
-    whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
+    if (map_bounds) {
+      whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
+    }
   }
   
   var queryText = "SELECT 'Name of org','Sub-category','URL','Address','Services Provided','Other Info' FROM 652548" + whereClause;
@@ -233,6 +235,8 @@ OP.Data = (function () {
         	cats = null;
         }
         
+        //var geocoder = new google.maps.Geocoder();
+        //var bounds = new google.maps.LatLngBounds();
         for (var i in rows) {
           if ($('#search-box').val()) {
             var searchRegex = new RegExp($('#search-box').val(), 'i');
@@ -247,6 +251,17 @@ OP.Data = (function () {
             }
           }
         	if (!cats || catsKeyed[rows[i][1]]) {
+            //console.log('looking at address: ' + rows[i][3]);
+            //geocoder.geocode(
+            //    {'address': rows[i][3]},
+            //    function(results, status) {
+            //      if (status == google.maps.GeocoderStatus.OK) {
+            //        console.log('extending bounds to include: ' + rows[i][3]);
+            //        bounds.union(results[0].geometry.viewport);
+            //      } else {
+            //        console.log("Address not found: " + rows[i][3]);
+            //      }
+            //    });
 	        	html += '<div class="row clearfix">' +
 	        		'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
 	        		'<div class="cell address">' + rows[i][3] + '</div>' +
@@ -257,6 +272,8 @@ OP.Data = (function () {
         	}
         }
         
+        //map.fitBounds(bounds);
+
         $("#table").html(html);
         
         $("#table .name a").hover(function () {
