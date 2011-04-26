@@ -115,7 +115,7 @@ function hoverCat() {  /* haha (-danny) */
 }
 
 function setHeights() {
-    $("#rail").css('minHeight', $("#subpage").height() - 20);
+    $("#rail").css('minHeight', $("#content").height() - 20);
 }
 
 OP.Cats = (function () {
