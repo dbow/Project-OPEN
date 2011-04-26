@@ -27,7 +27,6 @@ function changeData(cat, map) {
 }
 
 function getData(response) {
-  console.log(response.getDataTable());
   var table = new google.visualization.Table(document.getElementById('table'));
   options = {showRowNumber: true, maxHeight: 1000, width: 760}
   table.draw(response.getDataTable(), options);
@@ -236,7 +235,6 @@ OP.Data = (function () {
     
     me.receive = function (response) {
         _cache = response;
-        console.log(_cache);
         me.filter();
     };
     

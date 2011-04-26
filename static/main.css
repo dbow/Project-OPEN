@@ -79,8 +79,11 @@ input[type=text]:active {
 a {
 	color: #2222ff;
 }
-a:hover {
+#table a:hover {
 	text-decoration: underline;
+}
+a:visited {
+	color: #2222ff;
 }
 
 /* buttons */
@@ -219,7 +222,7 @@ a:hover {
     
     #table .cell {
     	float: left;
-    	padding: 2px 5px;
+    	padding: 2px 5px 5px;
     }
     #table .name {
     	width: 200px;
