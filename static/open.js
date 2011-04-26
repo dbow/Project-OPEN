@@ -12,7 +12,7 @@ function changeData(cat, map) {
     whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
   }
   
-  var queryText = "SELECT 'Name of org','Sub-category','URL' FROM 652548" + whereClause;
+  var queryText = "SELECT 'Name of org','Sub-category','URL','Address','Services Provided','Other Info' FROM 652548" + whereClause;
   
   $.ajax({
   	url: 'http://www.google.com/fusiontables/api/query',
@@ -199,11 +199,13 @@ OP.Data = (function () {
         
         for (var i in rows) {
         	if (!cats || catsKeyed[rows[i][1]]) {
-	        	html += '<div class="row clearfix">';
-	        	for (var j in rows[i]) {
-	        		html += '<div class="cell cell' + j + '">' + rows[i][j] + '</div>';
-	        	}
-	        	html += '</div>';
+	        	html += '<div class="row clearfix">' +
+	        		'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
+	        		'<div class="cell address">' + rows[i][3] + '</div>' +
+	        		'<div class="cell services">' + rows[i][4] + '</div>' +
+	        		'<div class="cell info">' + rows[i][5] + '</div>' +
+	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
+	        	'</div>';
         	}
         }
         

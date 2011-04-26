@@ -76,6 +76,13 @@ input[type=text]:active {
     
 }
 
+a {
+	color: #2222ff;
+}
+a:hover {
+	text-decoration: underline;
+}
+
 /* buttons */
 
 .ui-button {
