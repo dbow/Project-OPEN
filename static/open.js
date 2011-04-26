@@ -97,12 +97,12 @@ function createMap(){
   setHeights();
 
   google.maps.event.addListener(map, 'bounds_changed', function() {
-      changeData(null, map);
+      changeData(map);
   });
 }
 
-function selectCat() {
-    changeData($(this).html());
+OP.performSearch = function() {
+  changeData();
 }
 
 function hoverCat() {  /* haha (-danny) */
@@ -198,6 +198,19 @@ OP.Data = (function () {
         }
         
         for (var i in rows) {
+          if ($('#search-box').val()) {
+            var searchRegex = new RegExp('/.*' + $('#search-box').val() + '.*/i');
+            var rowMatches = false;
+            for (var field = 0; i < 6; i++) {
+              if (!searchRegex.test(rows[i][field])) {
+                rowMatches = true;
+                break;
+              }
+            }
+            if (!rowMatches) {
+              continue;
+            }
+          }
         	if (!cats || catsKeyed[rows[i][1]]) {
 	        	html += '<div class="row clearfix">' +
 	        		'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
