@@ -219,7 +219,8 @@ OP.Data = (function () {
     // data
     _cache,
     _table,
-    _tmpl = $("#table").template('table');
+    _tmpl = $("#table").template('table'),
+    _filtered = [];
     
     $("#table").html('');
     
@@ -230,11 +231,17 @@ OP.Data = (function () {
         return _table;
     };
     
+    me.getFiltered = function () {
+    	return _filtered;
+    };
+    
     me.filter = function (cats) {
     	var html = '',
     		rows = _cache.table.rows,
     		catsKeyed = {},
     		i, j;
+    		
+    	_filtered = [];
     
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
@@ -261,6 +268,7 @@ OP.Data = (function () {
             }
           }
         	if (!cats || catsKeyed[rows[i][1]]) {
+        		_filtered.push(rows[i]);
             //console.log('looking at address: ' + rows[i][3]);
             //geocoder.geocode(
             //    {'address': rows[i][3]},
@@ -319,6 +327,42 @@ OP.Data = (function () {
         
 		//$("#table").html( $.tmpl('table', _cache.table.rows) );
         setHeights();
+    };
+    
+    me.print = function () {
+    	var win = window.open('', 'Print'),
+    		doc = win.document,
+    		img = new Image(),
+    		params,
+    		markers = [];
+
+		doc.write('<html><head><title>Print</title></head><body></body></html>');
+		$("#map .gmnoprint").hide();
+		doc.body.innerHTML = '<div style="position: relative; height: 250px; width: 760px;">' + $("#map").html() + '</div>' + $("#table").html();
+		$("#map .gmnoprint").show();
+		
+		//not doing static maps
+		/*
+for (var i in _filtered) {
+			markers.push('hi');
+		}
+		
+		params = {
+			center: map.getCenter().toUrlValue(),
+			zoom: map.getZoom(),
+			maptype: 'roadmap',
+			sensor: 'false',
+			size: '760x250',
+			markers: markers.join('|')
+		};
+		
+		img.src = 'http://maps.google.com/maps/api/staticmap?center=Brooklyn+Bridge,New+York,NY&zoom=14&size=512x512&maptype=roadmap&markers=color:blue%7Clabel:S%7C40.702147,-74.015794&markers=color:green%7Clabel:G%7C40.711614,-74.012318&markers=color:red%7Ccolor:red%7Clabel:C%7C40.718217,-73.998284&sensor=false';
+		
+		img.src = 'http://maps.google.com/maps/api/staticmap?' + $.param(params);
+
+		doc.body.insertBefore(img, doc.body.childNodes[0]);
+*/
+		
     };
     
     me.receive = function (response) {
