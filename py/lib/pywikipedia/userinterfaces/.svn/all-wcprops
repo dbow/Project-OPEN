@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svnroot/pywikipedia/!svn/ver/9085/trunk/pywikipedia/userinterfaces
+END
+terminal_interface.py
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/pywikipedia/!svn/ver/9044/trunk/pywikipedia/userinterfaces/terminal_interface.py
+END
+tkinter_interface.py
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svnroot/pywikipedia/!svn/ver/9044/trunk/pywikipedia/userinterfaces/tkinter_interface.py
+END
+wxpython_interface.py
+K 25
+svn:wc:ra_dav:version-url
+V 89
+/svnroot/pywikipedia/!svn/ver/9044/trunk/pywikipedia/userinterfaces/wxpython_interface.py
+END
+cgi_interface.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/pywikipedia/!svn/ver/9044/trunk/pywikipedia/userinterfaces/cgi_interface.py
+END
+transliteration.py
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svnroot/pywikipedia/!svn/ver/9085/trunk/pywikipedia/userinterfaces/transliteration.py
+END

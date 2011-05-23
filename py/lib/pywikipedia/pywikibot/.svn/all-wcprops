@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svnroot/pywikipedia/!svn/ver/9244/trunk/pywikipedia/pywikibot
+END
+textlib.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svnroot/pywikipedia/!svn/ver/9225/trunk/pywikipedia/pywikibot/textlib.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svnroot/pywikipedia/!svn/ver/8266/trunk/pywikipedia/pywikibot/__init__.py
+END
+i18n.py
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svnroot/pywikipedia/!svn/ver/9227/trunk/pywikipedia/pywikibot/i18n.py
+END
+tools.py
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svnroot/pywikipedia/!svn/ver/9244/trunk/pywikipedia/pywikibot/tools.py
+END
+exceptions.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/7916/trunk/pywikipedia/pywikibot/exceptions.py
+END
+throttle.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svnroot/pywikipedia/!svn/ver/8035/trunk/pywikipedia/pywikibot/throttle.py
+END

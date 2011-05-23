@@ -1,0 +1,107 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svnroot/pywikipedia/!svn/ver/9055/trunk/pywikipedia/archive
+END
+translator.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svnroot/pywikipedia/!svn/ver/7336/trunk/pywikipedia/archive/translator.py
+END
+mediawiki_messages.py
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svnroot/pywikipedia/!svn/ver/7336/trunk/pywikipedia/archive/mediawiki_messages.py
+END
+CommonsPictureOfTheDay.py
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svnroot/pywikipedia/!svn/ver/3842/trunk/pywikipedia/archive/CommonsPictureOfTheDay.py
+END
+WdTXMLParser.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/2402/trunk/pywikipedia/archive/WdTXMLParser.py
+END
+extract_names.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/pywikipedia/!svn/ver/2372/trunk/pywikipedia/archive/extract_names.py
+END
+WdT.py
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svnroot/pywikipedia/!svn/ver/2402/trunk/pywikipedia/archive/WdT.py
+END
+are-identical.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/pywikipedia/!svn/ver/2372/trunk/pywikipedia/archive/are-identical.py
+END
+check_extern.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/2372/trunk/pywikipedia/archive/check_extern.py
+END
+getimages.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svnroot/pywikipedia/!svn/ver/2372/trunk/pywikipedia/archive/getimages.py
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svnroot/pywikipedia/!svn/ver/9055/trunk/pywikipedia/archive/README
+END
+featuredcount.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/pywikipedia/!svn/ver/8452/trunk/pywikipedia/archive/featuredcount.py
+END
+refcheck.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svnroot/pywikipedia/!svn/ver/7574/trunk/pywikipedia/archive/refcheck.py
+END
+windows_chars.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/pywikipedia/!svn/ver/8365/trunk/pywikipedia/archive/windows_chars.py
+END
+brackethttp.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svnroot/pywikipedia/!svn/ver/8365/trunk/pywikipedia/archive/brackethttp.py
+END
+test.py
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svnroot/pywikipedia/!svn/ver/7543/trunk/pywikipedia/archive/test.py
+END
+copy_table.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svnroot/pywikipedia/!svn/ver/5229/trunk/pywikipedia/archive/copy_table.py
+END
+sqldump.py
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svnroot/pywikipedia/!svn/ver/3254/trunk/pywikipedia/archive/sqldump.py
+END
