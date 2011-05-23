@@ -1,0 +1,10 @@
+# OS X nonsense
+.DS_Store
+
+# Python compiled files
+*.pyc
+*.pyo
+
+# vim tmp files
+.*.swp
+.*.swo
