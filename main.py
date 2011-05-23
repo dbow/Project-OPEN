@@ -20,7 +20,6 @@ from google.appengine.ext.webapp import util, template
 import os
 
 
-
 class MainHandler(webapp.RequestHandler):
     def get(self):
         template_values = {
@@ -30,8 +29,21 @@ class MainHandler(webapp.RequestHandler):
         self.response.out.write(template.render(path, template_values))
 
 
+class DirectionsHandler(webapp.RequestHandler):
+    def get(self):
+        origin = self.request.get('origin')
+        destination = self.request.get('destination')
+        template_values = {
+          'origin': origin,
+          'destination': destination,
+        }    
+        path = os.path.join(os.path.dirname(__file__), 'directions.html')
+        self.response.out.write(template.render(path, template_values))
+
+
 def main():
-    application = webapp.WSGIApplication([('/', MainHandler)],
+    application = webapp.WSGIApplication([('/', MainHandler),
+                                          ('/directions', DirectionsHandler)],
                                          debug=True)
     util.run_wsgi_app(application)
 

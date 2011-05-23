@@ -14,7 +14,9 @@ function changeData(update_map) {
   if (update_map) {
     map_bounds = map.getBounds();
     if (map_bounds) {
-      whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" + map_bounds.getSouthWest() + ", LATLNG" + map_bounds.getNorthEast() + "))";
+      whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
+                    map_bounds.getSouthWest() +
+                    ", LATLNG" + map_bounds.getNorthEast() + "))";
     }
   }
   
@@ -30,13 +32,6 @@ function changeData(update_map) {
   
   //var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
   //query.send(OP.Data.receive);
-}
-
-function getData(response) {
-  var table = new google.visualization.Table(document.getElementById('table'));
-  options = {showRowNumber: true, maxHeight: 1000, width: 760}
-  table.draw(response.getDataTable(), options);
-  setHeights();
 }
 
 function getCategoryList() {
@@ -64,6 +59,13 @@ function parseList(response) {
 }
 
 function setUpCategories(categories) {
+}
+
+function setDirections(){
+  origin_value = OP.data.origin_request;
+  destination_value = OP.data.destination_request;
+  $("#origin").html("<p>FROM: " + origin_value + "<p>");
+  $("#destination").html("<p>TO: " + destination_value + "<p>");
 }
 
 function createMap(){
@@ -275,6 +277,11 @@ OP.Data = (function () {
 	        		'<div class="cell address">' + rows[i][3] + '</div>' +
 	        		'<div class="cell services">' + rows[i][4] + '</div>' +
 	        		'<div class="cell info">' + rows[i][5] + '</div>' +
+	        		'<div class="cell directions"><button>Directions</button></div>' +
+	        		'<div class="cell directions-menu"><form action="/directions" id="directions-form">' +
+	        		  '<p>From: </p><input type="text" value="" />' +
+								'<p>To: </p><input type="text" value="' + rows[i][3] + '" />' +
+								'<input type="submit" value="Get Directions"></form></div>' +
 	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
 	        	'</div>';
         	}
@@ -289,6 +296,26 @@ OP.Data = (function () {
        	}, function () {
        		$(this).parent().siblings('.info').stop(true, true).fadeOut();
        	});
+       	
+       	$("#table .directions").click(function () {
+       	  var dir_menu = $(this).siblings('.directions-menu');
+       	  if (dir_menu.hasClass("invisible")) {
+       	    dir_menu.removeClass("invisible");
+       	  }
+       	  else {
+       	    dir_menu.addClass("invisible");
+       	  }
+       	});
+       	$("#table .directions").click(function () {
+       	  if($(this).data('displayed')) {
+       	    $(this).siblings('.directions-menu').fadeOut();
+       	    $(this).data('displayed', false);
+       	  }
+       	  else {
+       	    $(this).siblings('.directions-menu').fadeIn();
+       	    $(this).data('displayed', true);
+       	  }
+        }); 
         
 		//$("#table").html( $.tmpl('table', _cache.table.rows) );
         setHeights();
@@ -319,9 +346,14 @@ OP.Util = (function () {
 }());
 
 $(function () {
-	createMap();
-	getCategoryList();
-	setHeights();
+  if(location.pathname==="/directions"){
+	  setDirections();
+	}
+	else{
+	  createMap();
+	  getCategoryList();
+	  setHeights();
+	}
 });
 
 }());

@@ -63,7 +63,7 @@ h3 {
 form {
   padding-bottom:10px;
 }
-input[type=text] {
+#rail input[type=text] {
     float: left;
     width: 150px;
     padding: 4px 6px;
@@ -231,7 +231,7 @@ a:visited {
     	width: 200px;
     }
     #table .services {
-    	width: 330px;
+    	width: 250px;
     }
     #table .info {
     	display: none;
@@ -242,4 +242,23 @@ a:visited {
     	border: 1px solid #666;
     	background: #fff;
     	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+    #table .directions {
+    	width: 70px;
+    }
+    #table .directions-menu {
+      display: none;
+    	position:absolute;
+    	z-index: 3;
+    	top:-150px;
+    	right: 0px;
+    	width: 250px;
+    	height: 140px;
+    	border: 1px solid #666;
+    	background: #fff;
+    	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
+    }
+    #table .invisible {
+      display: none;
     }
