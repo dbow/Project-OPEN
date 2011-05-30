@@ -211,6 +211,10 @@ a:visited {
       width: 100%;
       height: 250px;
     }
+    #directions-map {
+      width: 100%;
+      height: 250px;
+    }
     
     #table .row {
     	position: relative;

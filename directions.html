@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Directions - Project OPEN San Francisco</title>
+		<link type="text/css" rel="stylesheet" href="static/main.css" />
+	</head>
+	<body>		
+		<div id="page">
+			<div id="header" class="clearfix">
+				<h1>projectOPEN San Francisco</h1>
+				<ul id="nav">
+					<li class="ui-pop"><a href="#">OPEN Map</a></li>
+					<li class="ui-pop"><a href="#">Add a resource</a></li>
+					<li class="ui-pop"><a href="#">Help</a></li>
+				</ul>
+			</div>
+
+			<div id="subpage">
+				<div id="rail" class="clearfix">
+					<h3>Directions</h3>
+                    <div id="directions" class="clearfix">
+                    	<form id="directions-form">
+								<input id="origin-form" type="text" value="{{ origin }}" />
+								<input id="destination-form" type="text" value="{{ destination }}" />
+								<input type="submit" class="ui-button" value="Get Directions">
+						</form>
+                    </div>
+					<div id="about">
+					<h3>About Project OPEN</h3>
+						<p>Project OPEN connects people to the local community and the open resources of San Francisco.  The places on the Project OPEN map share the following values:</p>
+						<ul>
+							<li>Open access: open to public, free, accessible</li>
+							<li>Open-minded: welcoming to all</li>
+							<li>Open books: transparency into operations, funding, etc.</li>
+							<li>Open source: making the info available to other orgs</li>
+						</ul>		
+					</div>
+				</div>
+				<div id="content" class="clearfix">
+					<div id="directions-map"></div>
+                    <div id="directions-list"></div>
+				</div>
+			</div>
+		</div>
+
+		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+		<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+		<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
+		<script type="text/javascript" src="static/directions.js"></script>
+	</body>
+</html>

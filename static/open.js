@@ -58,16 +58,6 @@ function parseList(response) {
   OP.Cats.populate(final_list);
 }
 
-function setUpCategories(categories) {
-}
-
-function setDirections(){
-  origin_value = OP.data.origin_request;
-  destination_value = OP.data.destination_request;
-  $("#origin").html("<p>FROM: " + origin_value + "<p>");
-  $("#destination").html("<p>TO: " + destination_value + "<p>");
-}
-
 function createMap(){
 
   var sf = new google.maps.LatLng(37.77493,-122.419416);
@@ -87,7 +77,6 @@ function createMap(){
 
   if(!initial_bounds) {
     initial_bounds = map.getBounds();
-    console.log(initial_bounds.toString()); 
   }
 
   });
@@ -114,7 +103,6 @@ function updateMap(location) {
   }
   else {
     geocoder = new google.maps.Geocoder();
-    console.log(initial_bounds.toString());
 
     geocoder.geocode( { 'address': location,
                         'bounds': initial_bounds,
@@ -151,15 +139,6 @@ $('#location').submit(function() {
 
 OP.performSearch = function() {
   changeData();
-}
-
-function hoverCat() {  /* haha (-danny) */
-  if ($(this).hasClass("hover")) {
-    $(this).removeClass("hover");
-  }
-  else {
-    $(this).addClass("hover");
-  }
 }
 
 function setHeights() {
@@ -287,8 +266,8 @@ OP.Data = (function () {
 	        		'<div class="cell info">' + rows[i][5] + '</div>' +
 	        		'<div class="cell directions"><button>Directions</button></div>' +
 	        		'<div class="cell directions-menu"><form action="/directions" id="directions-form">' +
-	        		  '<p>From: </p><input type="text" value="" />' +
-								'<p>To: </p><input type="text" value="' + rows[i][3] + '" />' +
+	        		  '<p>From: </p><input type="text" name="origin" value="" />' +
+								'<p>To: </p><input type="text" name="destination" value="' + rows[i][3] + '" />' +
 								'<input type="submit" value="Get Directions"></form></div>' +
 	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
 	        	'</div>';
@@ -390,14 +369,9 @@ OP.Util = (function () {
 }());
 
 $(function () {
-  if(location.pathname==="/directions"){
-	  setDirections();
-	}
-	else{
-	  createMap();
-	  getCategoryList();
-	  setHeights();
-	}
+    createMap();
+    getCategoryList();
+    setHeights();
 });
 
 }());
