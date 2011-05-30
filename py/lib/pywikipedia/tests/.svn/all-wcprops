@@ -1,0 +1,59 @@
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svnroot/pywikipedia/!svn/ver/9201/trunk/pywikipedia/tests
+END
+test_textlib.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svnroot/pywikipedia/!svn/ver/9201/trunk/pywikipedia/tests/test_textlib.py
+END
+test_pywiki.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svnroot/pywikipedia/!svn/ver/9197/trunk/pywikipedia/tests/test_pywiki.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svnroot/pywikipedia/!svn/ver/7977/trunk/pywikipedia/tests/__init__.py
+END
+test_utils.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svnroot/pywikipedia/!svn/ver/9197/trunk/pywikipedia/tests/test_utils.py
+END
+test_wiktionary.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/pywikipedia/!svn/ver/9043/trunk/pywikipedia/tests/test_wiktionary.py
+END
+test_xml.py
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svnroot/pywikipedia/!svn/ver/8333/trunk/pywikipedia/tests/test_xml.py
+END
+test_xmlreader.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/7366/trunk/pywikipedia/tests/test_xmlreader.py
+END
+test_query.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svnroot/pywikipedia/!svn/ver/9197/trunk/pywikipedia/tests/test_query.py
+END
+test_userlib.py
+K 25
+svn:wc:ra_dav:version-url
+V 74
+/svnroot/pywikipedia/!svn/ver/9043/trunk/pywikipedia/tests/test_userlib.py
+END

@@ -1,0 +1,77 @@
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svnroot/pywikipedia/!svn/ver/9248/branches/rewrite/scripts/i18n
+END
+editarticle.py
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svnroot/pywikipedia/!svn/ver/9231/branches/rewrite/scripts/i18n/editarticle.py
+END
+isbn.py
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/isbn.py
+END
+replace.py
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/replace.py
+END
+category.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/9248/branches/rewrite/scripts/i18n/category.py
+END
+category_redirect.py
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/category_redirect.py
+END
+cosmetic_changes.py
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/cosmetic_changes.py
+END
+__init__.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/9059/branches/rewrite/scripts/i18n/__init__.py
+END
+clean_sandbox.py
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svnroot/pywikipedia/!svn/ver/9237/branches/rewrite/scripts/i18n/clean_sandbox.py
+END
+basic.py
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/basic.py
+END
+redirect.py
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/redirect.py
+END
+interwiki.py
+K 25
+svn:wc:ra_dav:version-url
+V 77
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/interwiki.py
+END
+solve_disambiguation.py
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svnroot/pywikipedia/!svn/ver/9216/branches/rewrite/scripts/i18n/solve_disambiguation.py
+END
