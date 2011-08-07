@@ -8,3 +8,7 @@
 # vim tmp files
 .*.swp
 .*.swo
+
+# font files
+static/*.ttf
+static/*.otf

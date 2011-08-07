@@ -7,37 +7,20 @@
 	<body>		
 		<div id="page">
 			<div id="header" class="clearfix">
-				<h1>projectOPEN San Francisco</h1>
-				<ul id="nav">
-					<li class="ui-pop"><a href="#" onclick="OP.Data.print();">OPEN Map</a></li>
-					<li class="ui-pop"><a href="#">Add a resource</a></li>
-					<li class="ui-pop"><a href="#">Help</a></li>
+				<h1><img alt="projectOPEN" /></h1>
+				<ul id="nav" class="DIN-bold">
+					<li><a href="#">Contact</a></li>
+					<li><a href="#">FAQ</a></li>
+					<li><a href="#">About</a></li>
+					<li><a href="#" onclick="OP.Data.print();">Public Maps</a></li>
 				</ul>
 			</div>
 
 			<div id="subpage">
 				<div id="rail" class="clearfix">
 					<h3>What are you looking for?</h3>
-					<div id="filters">
-						<div id="search" class="clearfix">
-							<form id="search-form" onsubmit="OP.performSearch(); return false;">
-								<input id="search-box" type="text" />
-								<input type="submit" class="ui-button" value="Search">
-							</form>
-						</div>
-						<div id="location" class="clearfix">
-							<div>Near:</div>
-							<form action="#" id="location-form">
-								<input type="text" value="Current location" />
-								<input type="submit" class="ui-button" value="Update">
-							</form>
-						</div>
-						<div id="cats">
-						    <div class="cat">${cat}</div>
-						</div>
-					</div>
 					<div id="about">
-					<h3>About Project OPEN</h3>
+						<h3>About Project OPEN</h3>
 						<p>Project OPEN connects people to the local community and the open resources of San Francisco.  The places on the Project OPEN map share the following values:</p>
 						<ul>
 							<li>Open access: open to public, free, accessible</li>
@@ -48,6 +31,29 @@
 					</div>
 				</div>
 				<div id="content" class="clearfix">
+					<div id="filters">
+						<div id="filters-main" class="clearfix">
+							<div id="search" class="filters-field">
+								<form id="search-form" onsubmit="OP.performSearch(); return false;">
+									<div class="filters-label DIN-bold">Search By:</div>
+									<input type="text" id="search-box" class="ui-text-input ui-off" title="Organization, Topic" />
+									<input type="submit" value="" />
+								</form>
+							</div>
+							<div id="location" class="filters-field">
+								<form action="#" id="location-form">
+									<div class="filters-label DIN-bold">Search By:</div>
+									<input type="text" class="ui-text-input ui-off" title="Current location" />
+									<input type="submit" value ="" />
+								</form>
+							</div>
+							<div class="filters-toggle">Hide Filters</div>
+						</div>
+						<div id="cats">
+							<div class="cats-header DIN-bold">Filter By</div>
+							<div class="cat cat-all"><div class="cat-box"></div>All</div>
+						</div>
+					</div>
 					<div id="map"></div>
 					<div id="table" class="clearfix">
 						<div class="row">

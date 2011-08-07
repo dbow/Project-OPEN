@@ -49,8 +49,7 @@ function parseList(response) {
         category_list.push(new_category);
       }
   }
-  final_list = []
-  final_list.push({'cat': 'All'});
+  final_list = [];
   for(i = 0; i < category_list.length; i++) {
       list_item = {'cat': category_list[i]};
       final_list.push(list_item);     
@@ -162,27 +161,45 @@ OP.Cats = (function () {
     	]; */
     	
     	var cats = $("#cats"),
-            tmpl = cats.html();
+            tmpl = cats.html(),
+            table = $('<table/>'),
+            row = $('<tr/>').appendTo(table);
         
-        cats.html('');
-    	$.tmpl(tmpl, categories).click(_click).appendTo("#cats");
+        //cats.html('');
+        
+        for (var i = 0, j = 0; i < categories.length; i++) {
+        	if (j > 4) {
+        		row = $('<tr/>').appendTo(table);
+        		j = 0;
+        	}
+        	
+        	row.append(
+        		'<td class="cat"><div class="cat-box"></div>' + categories[i].cat + '</td>'
+        	);
+        	j++;
+        }
+        
+    	//$.tmpl(tmpl, categories).click(_click).appendTo("#cats");
+    	cats.append(table).delegate('.cat', 'click', _click);
     	setHeights();
     };
     
     _click = function () {
         var el = $(this);
         
-        if (el.html() === 'All') {
-            el.siblings().removeClass('on');
+        if (el.text() === 'All') {
+            $("#cats table .cat").removeClass('on');
+            el.addClass('on');
             _selected = {};
         }
         else if (el.hasClass('on')) {
             el.removeClass('on');
-            delete _selected[el.html()];
+            delete _selected[el.text()];
         }
         else {
             $(this).addClass('on');
-            _selected[el.html()] = 1;
+            $("#cats .cat-all").removeClass('on');
+            _selected[el.text()] = 1;
         }
         
         OP.Data.filter(OP.Util.toArrayKeys(_selected));
@@ -218,9 +235,12 @@ OP.Data = (function () {
     	var html = '',
     		rows = _cache.table.rows,
     		catsKeyed = {},
-    		i, j;
+    		i, j,
+    		search = $("#search-box");
     		
     	_filtered = [];
+    	
+    	console.log(rows);
     
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
@@ -234,7 +254,7 @@ OP.Data = (function () {
         //var geocoder = new google.maps.Geocoder();
         //var bounds = new google.maps.LatLngBounds();
         for (var i in rows) {
-          if ($('#search-box').val()) {
+          if (search.val() && search.val() !== search.attr('title')) {
             var searchRegex = new RegExp($('#search-box').val(), 'i');
             var rowMatches = false;
             for (var field = 0; field < 6; field++) {
@@ -355,6 +375,40 @@ for (var i in _filtered) {
 OP.Util = (function () {
     var me = {};
     
+    // set up default functionallity
+    me.setUp = function () {
+    	//set up search inputs
+    	$('.ui-off').each(function() {
+    		$(this).val($(this).attr('title'));
+    	}).live('focus', function () {
+    		var el = $(this);
+    		el.removeClass('ui-off').addClass('ui-on');
+    		
+    		if (el.val() === el.attr('title')) {
+    			el.val('');
+    		}
+    	});
+    	
+    	$('.ui-on').live('blur', function () {
+    		var el = $(this);
+    		
+    		if (!el.val()) {
+    			el.val(el.attr('title'));
+    		}
+    		
+    		el.addClass('ui-off').removeClass('ui-on');
+    	});
+    	
+    	//set up categories toggler
+    	$('.filters-toggle').toggle(function () {
+    		$(this).text('Show Filters');
+    		$('#cats').slideUp();
+    	}, function () {
+    		$(this).text('Hide Filters');
+    		$('#cats').slideDown();
+    	});
+    };
+    
     me.toArrayKeys = function (obj) {
         var arr = [];
     
@@ -369,6 +423,7 @@ OP.Util = (function () {
 }());
 
 $(function () {
+	OP.Util.setUp();
     createMap();
     getCategoryList();
     setHeights();
