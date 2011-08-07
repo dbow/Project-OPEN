@@ -279,16 +279,28 @@ OP.Data = (function () {
             //        console.log("Address not found: " + rows[i][3]);
             //      }
             //    });
-	        	html += '<div class="row clearfix">' +
-	        		'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
-	        		'<div class="cell address">' + rows[i][3] + '</div>' +
-	        		'<div class="cell services">' + rows[i][4] + '</div>' +
-	        		'<div class="cell info">' + rows[i][5] + '</div>' +
-	        		'<div class="cell directions"><button>Directions</button></div>' +
+	        	html +=
+	        	'<div class="row clearfix">' +
+	        		'<div class="clearfix">' +
+		        		'<img class="table-img" />' +
+		        		'<div class="table-cells">' +
+			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
+			        		'<div class="cell table-services">' + rows[i][4] + '</div>' +
+			        		'<div class="cell table-address">' + rows[i][3] + '</div>' +
+			        		'<div class="cell table-link"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][2] + '</a></div>' +
+			        		'<div class="table-toggle">More Information</div>' +
+		        		'</div>' +
+	        		'</div>' +
+	        		'<div class="table-more" style="display: none;">' +
+	        			'<div class="cell table-info">' + rows[i][5] + '</div>' +
+	        		'</div>' +
+	        		/*
+'<div class="cell directions"><button>Directions</button></div>' +
 	        		'<div class="cell directions-menu"><form action="/directions" id="directions-form">' +
 	        		  '<p>From: </p><input type="text" name="origin" value="" />' +
 								'<p>To: </p><input type="text" name="destination" value="' + rows[i][3] + '" />' +
 								'<input type="submit" value="Get Directions"></form></div>' +
+*/
 	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
 	        	'</div>';
         	}
@@ -298,11 +310,13 @@ OP.Data = (function () {
 
         $("#table").html(html);
         
-        $("#table .name a").hover(function () {
+       /*
+ $("#table .name a").hover(function () {
         	$(this).parent().siblings('.info').fadeIn();
        	}, function () {
        		$(this).parent().siblings('.info').stop(true, true).fadeOut();
        	});
+*/
        	
        	$("#table .directions").click(function () {
        	  var dir_menu = $(this).siblings('.directions-menu');
@@ -407,6 +421,19 @@ OP.Util = (function () {
     		$(this).text('Hide Filters');
     		$('#cats').slideDown();
     	});
+    	
+    	//set up table toggler
+    	$("#table").delegate('.table-toggle', 'click', function () {
+        	var el = $(this);
+        	if (el.text() === 'More Information') {
+        		el.text('Less Information');
+        		el.parent().parent().siblings().slideDown();
+        	}
+        	else {
+        		el.text('More Information');
+        		el.parent().parent().siblings().slideUp();
+        	}
+        });
     };
     
     me.toArrayKeys = function (obj) {

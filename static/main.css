@@ -30,7 +30,7 @@ body {
     background: #F5F4EB;
     font-family: "Trebuchet MS", sans-serif;
     font-size: 12px;
-    color: #333;
+    color: #000;
 }
 
 .ui-impr {
@@ -63,13 +63,14 @@ h3 {
 }
 
 a {
-	color: #2222ff;
+	color: #e4542e;
+	font-weight: bold;
 }
 #table a:hover {
 	text-decoration: underline;
 }
 a:visited {
-	color: #2222ff;
+	color: #e4542e;
 }
 
 /* buttons */
@@ -250,28 +251,59 @@ a:visited {
       width: 100%;
       height: 250px;
     }
-    
+    .table-outer {
+    	padding: 0 40px;
+    }
+    .table-header {
+    	padding: 15px 5px;
+    	font-size: 21px;
+    	border-bottom: 2px solid #eee;
+    	text-transform: uppercase;
+    }
+
     #table .row {
     	position: relative;
+    	margin: 15px 5px 0;
+    	padding-bottom: 15px; 
+    	border-bottom: 2px solid #eee;
     }
     
     #table .row:nth-child(2n+1) {
-    	background: #eeeeff;
+    }
+    
+    .table-img {
+    	float: left;
+    	margin-right: 10px;
+    	width: 160px;
+    	height: 120px;
+    }
+    .table-cells {
+    	float: left;
+    	width: 445px;
     }
     
     #table .cell {
-    	float: left;
-    	padding: 2px 5px 5px;
+    	padding: 2px 0 5px;
     }
-    #table .name {
-    	width: 200px;
-    }
-    #table .address {
-    	width: 200px;
-    }
-    #table .services {
-    	width: 250px;
-    }
+	    .table-name {
+	    	font-size: 18px;
+	    	text-transform: uppercase;
+	    }
+	    .table-services {
+	    	color: #666;
+	    	font-style: italic;
+	    }
+	    .table-toggle {
+	    	color: #666;
+	    	cursor: pointer;
+	    }
+	    .table-more {
+	    	color: #666;
+	    	margin-top: 15px;
+	    	padding: 15px 0 15px 170px;
+	    	-webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3) inset;
+	    }
+    
     #table .info {
     	display: none;
     	position: absolute;
