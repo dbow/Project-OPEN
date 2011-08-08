@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Wiki Content Update Status</title>
+	</head>
+	<body>
+		<div id="incomplete">
+			<h2>Incomplete pages</h2>
+			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
+				<tbody>
+					<tr>
+						<th>Name</th>
+						<th>Wiki URL</th>
+						<th>Summary</th>
+						<th>Categories</th>
+						<th>Address</th>
+						<th>Geocoded Address</th>
+						<th>Phone</th>
+						<th>Email</th>
+						<th>Website</th>
+						<th>Contacts</th>
+						<th>Hours</th>
+						<th>Languages</th>
+						<th>Image</th>
+						<th>Status</th>
+						<th>Last Updated</th>
+					</tr>
+			{% for incomplete_resource in incomplete_resources %}
+			        <tr>
+						<td>{{ incomplete_resource.name }}</td>
+						<td><a href="http://sfhomeless.wikia.com/wiki/{{ incomplete_resource.wikiurl }}">{{ incomplete_resource.wikiurl }}</a></td>
+						<td>{{ incomplete_resource.summary }}</td>
+						<td>{{ incomplete_resource.categories }}</td>
+						<td>{{ incomplete_resource.address }}</td>
+						<td>{{ incomplete_resource.geocoded_address }}</td>
+						<td>{{ incomplete_resource.phone }}</td>
+						<td>{{ incomplete_resource.email }}</td>
+						<td>{{ incomplete_resource.website }}</td>
+						<td>{{ incomplete_resource.contacts }}</td>
+						<td>{{ incomplete_resource.hours }}</td>
+						<td>{{ incomplete_resource.languages }}</td>
+						<td>{{ incomplete_resource.image }}</td>
+						<td>{{ incomplete_resource.status }}</td>
+						<td>{{ incomplete_resource.last_updated }}</td>
+				    </tr>
+			{% endfor %}
+				</tbody>
+			</table>
+		</div>	
+		<div id="complete">
+			<h2>Complete pages</h2>
+			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
+				<tbody>
+					<tr>
+						<th>Name</th>
+						<th>Wiki URL</th>
+						<th>Summary</th>
+						<th>Categories</th>
+						<th>Address</th>
+						<th>Geocoded Address</th>
+						<th>Phone</th>
+						<th>Email</th>
+						<th>Website</th>
+						<th>Contacts</th>
+						<th>Hours</th>
+						<th>Languages</th>
+						<th>Image</th>
+						<th>Status</th>
+						<th>Last Updated</th>
+					</tr>
+			{% for complete_resource in complete_resources %}
+			        <tr>
+				    	<td>{{ complete_resource.name }}</td>
+						<td><a href="http://sfhomeless.wikia.com/wiki/{{ complete_resource.wikiurl }}">{{ complete_resource.wikiurl }}</a></td>
+						<td>{{ complete_resource.summary }}</td>
+						<td>{{ complete_resource.categories }}</td>
+						<td>{{ complete_resource.address }}</td>
+						<td>{{ complete_resource.geocoded_address }}</td>
+						<td>{{ complete_resource.phone }}</td>
+						<td>{{ complete_resource.email }}</td>
+						<td>{{ complete_resource.website }}</td>
+						<td>{{ complete_resource.contacts }}</td>
+						<td>{{ complete_resource.hours }}</td>
+						<td>{{ complete_resource.languages }}</td>
+						<td>{{ complete_resource.image }}</td>
+						<td>{{ complete_resource.status }}</td>
+						<td>{{ complete_resource.last_updated }}</td>
+				    </tr>
+			{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

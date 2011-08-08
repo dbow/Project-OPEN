@@ -19,10 +19,13 @@ import os
 import datetime
 import logging
 import httplib2
+import time
+import urllib
 from xml.dom.minidom import parseString
 
 from google.appengine.ext import webapp, db
 from google.appengine.ext.webapp import util, template
+from google.appengine.api import taskqueue
 
 
 WIKI_URL = 'http://sfhomeless.wikia.com/'
@@ -72,7 +75,7 @@ class Resource(db.Model):
   hours = db.TextProperty()
   languages = db.StringProperty()
   image = db.BlobProperty()
-  status = db.StringProperty()
+  status = db.StringProperty(choices=['Active','Incomplete','Deleted'])
   last_updated = db.DateTimeProperty()
 
 
@@ -88,6 +91,23 @@ class MainHandler(webapp.RequestHandler):
         'resources': resources
     }
     path = os.path.join(os.path.dirname(__file__), 'index.html')
+    self.response.out.write(template.render(path, template_values))
+
+
+class WikiStatusHandler(webapp.RequestHandler):
+  """A development page to display all synced resources."""
+
+  def get(self):
+    """Presents Active and Incomplete resources."""
+
+    complete_resources = Resource().all().filter('status =', 'Active')
+    incomplete_resources = Resource().all().filter('status =', 'Incomplete')
+
+    template_values = {
+        'complete_resources': complete_resources,
+        'incomplete_resources': incomplete_resources,
+    }
+    path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
     self.response.out.write(template.render(path, template_values))
 
 
@@ -109,7 +129,15 @@ class DirectionsHandler(webapp.RequestHandler):
 
 
 def getElementValue(semantic_property, element):
-  """TODO."""
+  """Retrieves the provided value from the provided XML node.
+
+  Args:
+    semantic_property: A string indicating which property is being retrieved.
+    element: A 'property:' XML node.
+
+  Returns:
+    The text value of the XML node.
+  """
 
   special_properties = ['Email', 'Website']
   if semantic_property in special_properties:
@@ -119,7 +147,14 @@ def getElementValue(semantic_property, element):
 
 
 def getResourceCategories(resource_xml):
-  """TODO."""
+  """Retrieves the Category values from the provided xml.
+
+  Args:
+    resource_xml: The XML document of a given resource.
+
+  Returns:
+    A list of categories (strings) for this resource.
+  """
 
   categories = resource_xml.getElementsByTagName('owl:Class')
   category_list = []
@@ -129,8 +164,19 @@ def getResourceCategories(resource_xml):
   return category_list
 
 
-def retrieveResourceInfo(resource_page):
-  """TODO."""
+def getResourceInfo(resource_page):
+  """Retrieves the XML for the given resource and parses it.
+
+  Issues a GET request to the exportRDF URL for the given page and parses
+  the returned XML to extract the relevant information about the resource.
+  
+  Args:
+    resource_page: The URL name of the resource page to query.
+
+  Returns:
+    resource_info: A dictionary of properties and values for the provided
+      resource.
+  """
 
   url = WIKI_URL + str('/index.php?title=Special:ExportRDF&page=' +
                        resource_page)
@@ -166,29 +212,57 @@ def retrieveResourceInfo(resource_page):
   return resource_info
 
 
+def getAllPages(resource_pages, continue_query=None):
+  """TODO."""
+
+  QUERY_URL = str('http://sfhomeless.wikia.com/api.php?'
+                  'action=query&list=allpages&aplimit=500&format=xml')
+  if continue_query:
+    QUERY_URL = QUERY_URL + '&apfrom=' + urllib.quote(continue_query)
+
+  http = httplib2.Http()
+  logging.info('http request')
+  logging.info(QUERY_URL)
+  response, content = http.request(QUERY_URL, 'GET')
+  response_xml = parseString(content)
+  pages = response_xml.getElementsByTagName('p')
+  for page in pages:
+    title = page.getAttribute('title').replace("'","%27").replace(' ','_')
+    resource_pages.append(title.encode('utf-8'))
+
+  query_continue = response_xml.getElementsByTagName('query-continue')
+  if query_continue:
+    allpages_continue = query_continue[0].getElementsByTagName('allpages')[0]
+    apfrom = allpages_continue.getAttribute('apfrom')
+    logging.info(apfrom)
+    resource_pages = getAllPages(resource_pages, apfrom)
+
+  return resource_pages
+
+
 class WikiSyncTaskHandler(webapp.RequestHandler):
   """TODO."""
 
-  # TODO(dbow): update to post when turning into a task.
-  def get(self):
+  def post(self):
     """TODO."""
 
     # TODO(dbow): Maybe use the following maintenance script:
     # http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions\
     # /SemanticMediaWiki/maintenance/SMW_dumpRDF.php
 
-    # TODO(dbow): Use the python library to query for all pages to
-    # get the page names here.
-    resource_pages = ['Bristol_Hotel']
+    resource_list = []
+    resource_pages = getAllPages(resource_list)
 
     for resource_page in resource_pages:
-      resource_info = retrieveResourceInfo(resource_page)
-      logging.info(resource_info)
-      resource = Resource().all().filter('wikiurl =', resource_page).get()
+      logging.info('getResourceInfo')
+      logging.info(resource_page)
+      resource_info = getResourceInfo(resource_page)
+      decoded_url = resource_page.decode('utf-8')
 
+      resource = Resource().all().filter('wikiurl =', decoded_url).get()
       if not resource:
         resource = Resource()
-        resource.wikiurl = resource_page
+        resource.wikiurl = decoded_url
       resource.name = resource_info['Name']
     
       if resource_info['Property Success'] == True:
@@ -207,11 +281,24 @@ class WikiSyncTaskHandler(webapp.RequestHandler):
         resource.status = 'Incomplete'
       resource.last_updated = datetime.datetime.now()
       resource.put()
+      time.sleep(.1)
+
+
+class WikiSyncLauncher(webapp.RequestHandler):
+  """TODO."""
+
+  def get(self):
+    """TODO."""
+
+    taskqueue.add(url='/task/wikisync')
+    self.response.out.write('Task launched.')
 
 
 def main():
     application = webapp.WSGIApplication(
         [('/', MainHandler),
+         ('/wikistatus', WikiStatusHandler),
+         ('/wikisync', WikiSyncLauncher),
          ('/directions', DirectionsHandler),
          ('/task/wikisync', WikiSyncTaskHandler)],
         debug=True)

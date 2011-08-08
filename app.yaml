@@ -11,5 +11,9 @@ handlers:
   script: main.py
   login: admin
 
+- url: /wikisync.*
+  script: main.py
+  login: admin
+
 - url: .*
   script: main.py
