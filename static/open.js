@@ -282,6 +282,7 @@ OP.Data = (function () {
 	        	html +=
 	        	'<div class="row clearfix">' +
 	        		'<div class="clearfix">' +
+	        			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
 		        		'<img class="table-img" />' +
 		        		'<div class="table-cells">' +
 			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
@@ -415,10 +416,10 @@ OP.Util = (function () {
     	
     	//set up categories toggler
     	$('.filters-toggle').toggle(function () {
-    		$(this).text('Show Filters');
+    		$(this).text('Show Filters').addClass('ui-off');
     		$('#cats').slideUp();
     	}, function () {
-    		$(this).text('Hide Filters');
+    		$(this).text('Hide Filters').removeClass('ui-off');
     		$('#cats').slideDown();
     	});
     	
@@ -433,6 +434,14 @@ OP.Util = (function () {
         		el.text('More Information');
         		el.parent().parent().siblings().slideUp();
         	}
+        });
+        
+        //set up rail toggler
+        $(".rail-hide").click(function () {
+        	$("#page").addClass('page-wide');
+        });
+        $(".rail-show").click(function () {
+        	$("#page").removeClass('page-wide');
         });
     };
     

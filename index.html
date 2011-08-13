@@ -18,29 +18,40 @@
 
 			<div id="subpage">
 				<div id="rail" class="clearfix">
-					<h3>What are you looking for?</h3>
-					<div id="about">
-						<h3>About Project OPEN</h3>
-						<p>Project OPEN connects people to the local community and the open resources of San Francisco.  The places on the Project OPEN map share the following values:</p>
-						<ul>
-							<li>Open access: open to public, free, accessible</li>
-							<li>Open-minded: welcoming to all</li>
-							<li>Open books: transparency into operations, funding, etc.</li>
-							<li>Open source: making the info available to other orgs</li>
-						</ul>		
+					<div class="rail-show">&laquo;</div>
+					<div class="rail-hide">Hide My Guide <span>&raquo;</span></div>
+					<div class="rail-options clearfix">
+						<div class="rail-option"><img src="static/img/permalink.png" /></div>
+						<div class="rail-option"><img src="static/img/email.png" /></div>
+						<div class="rail-option"><img src="static/img/download.png" /></div>
+						<div class="rail-option last"><img src="static/img/print.png" /></div>
+					</div>
+					<div class="rail-guide">
+						<div class="rail-guide-title DIN-reg">My Guide</div>
+						Add resources to this section and print your custom map.
+					</div>
+					<div class="rail-guide-add-box clearfix">
+						Add Resource to My Guide
+						<form id="resource-add-form">
+							<input type="text" class="ui-text-input ui-off" title="Start typing to find a resource" />
+							<input type="submit" class="ui-button" value="Add" />
+						</form>
+					</div>
+					<div class="rail-guide-added-box last">
+						<div class="rail-guide-empty">Nothing in My Guide yet. Start filling it out by adding a resource. User the bar above, or browse through our database.</div>
 					</div>
 				</div>
 				<div id="content" class="clearfix">
 					<div id="filters">
 						<div id="filters-main" class="clearfix">
-							<div id="search" class="filters-field">
+							<div id="search" class="filters-field filters-search">
 								<form id="search-form" onsubmit="OP.performSearch(); return false;">
 									<div class="filters-label DIN-bold">Search By:</div>
 									<input type="text" id="search-box" class="ui-text-input ui-off" title="Organization, Topic" />
 									<input type="submit" value="" />
 								</form>
 							</div>
-							<div id="location" class="filters-field">
+							<div id="location" class="filters-field filters-location">
 								<form action="#" id="location-form">
 									<div class="filters-label DIN-bold">Search By:</div>
 									<input type="text" class="ui-text-input ui-off" title="Current location" />
