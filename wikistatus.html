@@ -4,12 +4,41 @@
 		<title>Wiki Content Update Status</title>
 	</head>
 	<body>
+		<form id="resource_form" action="/wikistatus" method="post">
+        	<input type="hidden" name="wiki_url" value="" />
+			<input type="hidden" name="action" value="" />
+			<input type="hidden" name="status" value="" />
+        </form>
+        <div id="instructions">
+			<h2>Instructions for updating the wiki</h2>
+			<ol>
+				<li>Click the link in the Wiki URL column below of the Resource you want to update.  Open the resource page in two tabs.  You'll be making the edits in one tab, with the other tab open for easy referencing.  [See note below if this wiki page is not actually a resource, or does not have enough information to update].</li>
+				<li>In one of the tabs, click 'Add category' at the bottom of the page and add the category 'Resource'.</li>
+				<li>Click 'Save'.</li>
+				<li>Reload the page - you should now see 'Edit with form' at the top (instead of just 'Edit this page').</li>
+				<li>Click 'Edit with form' and add in any relevant information in the fields at the top.  Use the other tab for easy referencing of the source content.  Do *not* update the 'Free text' area!</li>
+				<li>Click 'Publish' at the bottom of the page.  (you may have to complete a CAPTCHA).</li>
+				<li>Click the dropdown arrow next to 'Edit with Form' and select 'Edit this page'.</li>
+				<li>Click the 'X' next to the 'Resource' category you previously added, to remove it.</li>
+				<li>Click 'Publish'</li>
+				<li>Go back to this page and click 'Sync this resource' next to the resource you updated to sync the changes to the database.  It should now appear in the 'Active' section with the latest information!</li>
+			</ol>
+			<p><strong>Note:</strong> There are some pages in the Wiki that are not suitable as Resources in the frontend for projectOPEN.  These include the following:
+				<ul>
+					<li>It's an event announcement</li>
+					<li>It's a service without a physical presence (like a phone number)</li>
+					<li>It's a page that redirects to another page (which is also listed below)</li>
+					<li>It has incomplete or incomprehensible information</li>
+				</ul>If the page you go to turns out to not be a resource with information that should appear in the frontend, go back to this page and update the page's status to 'Excluded' in the 'Modify Status' column below.</p>
+	    </div>
 		<div id="incomplete">
 			<h2>Incomplete pages</h2>
 			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
 				<tbody>
 					<tr>
 						<th>Name</th>
+						<th>Modify Status</th>
+						<th>Sync to Wiki</th>
 						<th>Wiki URL</th>
 						<th>Summary</th>
 						<th>Categories</th>
@@ -28,7 +57,16 @@
 			{% for incomplete_resource in incomplete_resources %}
 			        <tr>
 						<td>{{ incomplete_resource.name }}</td>
-						<td><a href="http://sfhomeless.wikia.com/wiki/{{ incomplete_resource.wikiurl }}">{{ incomplete_resource.wikiurl }}</a></td>
+						<td class="resource_update">			
+							<select name="status">
+							<option value="Active">Active</option>
+							<option value="Incomplete" selected>Incomplete</option>
+							<option value="Excluded">Excluded</option>
+							</select>
+							<input type="submit" value="Update"></input>
+						</td>
+						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ incomplete_resource.wikiurl }}">{{ incomplete_resource.wikiurl }}</a></td>
 						<td>{{ incomplete_resource.summary }}</td>
 						<td>{{ incomplete_resource.categories }}</td>
 						<td>{{ incomplete_resource.address }}</td>
@@ -47,12 +85,123 @@
 				</tbody>
 			</table>
 		</div>	
+		<div id="excluded">
+			<h2>Excluded pages</h2>
+			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
+				<tbody>
+					<tr>
+						<th>Name</th>
+						<th>Modify Status</th>
+						<th>Sync to Wiki</th>
+						<th>Wiki URL</th>
+						<th>Summary</th>
+						<th>Categories</th>
+						<th>Address</th>
+						<th>Geocoded Address</th>
+						<th>Phone</th>
+						<th>Email</th>
+						<th>Website</th>
+						<th>Contacts</th>
+						<th>Hours</th>
+						<th>Languages</th>
+						<th>Image</th>
+						<th>Status</th>
+						<th>Last Updated</th>
+					</tr>
+			{% for excluded_resource in excluded_resources %}
+			        <tr>
+				    	<td>{{ excluded_resource.name }}</td>
+				        <td class="resource_update">			
+							<select name="status">
+							<option value="Active">Active</option>
+							<option value="Incomplete">Incomplete</option>
+							<option value="Excluded" selected>Excluded</option>
+							</select>
+							<input type="submit" value="Update"></input>
+						</td>
+						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ excluded_resource.wikiurl }}">{{ excluded_resource.wikiurl }}</a></td>
+						<td>{{ excluded_resource.summary }}</td>
+						<td>{{ excluded_resource.categories }}</td>
+						<td>{{ excluded_resource.address }}</td>
+						<td>{{ excluded_resource.geocoded_address }}</td>
+						<td>{{ excluded_resource.phone }}</td>
+						<td>{{ excluded_resource.email }}</td>
+						<td>{{ excluded_resource.website }}</td>
+						<td>{{ excluded_resource.contacts }}</td>
+						<td>{{ excluded_resource.hours }}</td>
+						<td>{{ excluded_resource.languages }}</td>
+						<td>{{ excluded_resource.image }}</td>
+						<td>{{ excluded_resource.status }}</td>
+						<td>{{ excluded_resource.last_updated }}</td>
+				    </tr>
+			{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		<div id="deleted">
+			<h2>Deleted pages</h2>
+			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
+				<tbody>
+					<tr>
+						<th>Name</th>
+						<th>Modify Status</th>
+						<th>Sync to Wiki</th>
+						<th>Wiki URL</th>
+						<th>Summary</th>
+						<th>Categories</th>
+						<th>Address</th>
+						<th>Geocoded Address</th>
+						<th>Phone</th>
+						<th>Email</th>
+						<th>Website</th>
+						<th>Contacts</th>
+						<th>Hours</th>
+						<th>Languages</th>
+						<th>Image</th>
+						<th>Status</th>
+						<th>Last Updated</th>
+					</tr>
+			{% for deleted_resource in deleted_resources %}
+			        <tr>
+				    	<td>{{ deleted_resource.name }}</td>
+						<td class="resource_update">			
+							<select name="status">
+							<option value="Active">Active</option>
+							<option value="Incomplete">Incomplete</option>
+							<option value="Excluded">Excluded</option>
+							<option value="Deleted" selected>Deleted</option>
+							</select>
+							<input type="submit" value="Update"></input>
+						</td>
+						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ deleted_resource.wikiurl }}">{{ deleted_resource.wikiurl }}</a></td>
+						<td>{{ deleted_resource.summary }}</td>
+						<td>{{ deleted_resource.categories }}</td>
+						<td>{{ deleted_resource.address }}</td>
+						<td>{{ deleted_resource.geocoded_address }}</td>
+						<td>{{ deleted_resource.phone }}</td>
+						<td>{{ deleted_resource.email }}</td>
+						<td>{{ deleted_resource.website }}</td>
+						<td>{{ deleted_resource.contacts }}</td>
+						<td>{{ deleted_resource.hours }}</td>
+						<td>{{ deleted_resource.languages }}</td>
+						<td>{{ deleted_resource.image }}</td>
+						<td>{{ deleted_resource.status }}</td>
+						<td>{{ deleted_resource.last_updated }}</td>
+				    </tr>
+			{% endfor %}
+				</tbody>
+			</table>
+		</div>
 		<div id="complete">
 			<h2>Complete pages</h2>
 			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
 				<tbody>
 					<tr>
 						<th>Name</th>
+						<th>Modify Status</th>
+						<th>Sync to Wiki</th>
 						<th>Wiki URL</th>
 						<th>Summary</th>
 						<th>Categories</th>
@@ -71,7 +220,16 @@
 			{% for complete_resource in complete_resources %}
 			        <tr>
 				    	<td>{{ complete_resource.name }}</td>
-						<td><a href="http://sfhomeless.wikia.com/wiki/{{ complete_resource.wikiurl }}">{{ complete_resource.wikiurl }}</a></td>
+						<td class="resource_update">			
+							<select name="status">
+							<option value="Active" selected>Active</option>
+							<option value="Incomplete">Incomplete</option>
+							<option value="Excluded">Excluded</option>
+							</select>
+							<input type="submit" value="Update"></input>
+						</td>
+						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ complete_resource.wikiurl }}">{{ complete_resource.wikiurl }}</a></td>
 						<td>{{ complete_resource.summary }}</td>
 						<td>{{ complete_resource.categories }}</td>
 						<td>{{ complete_resource.address }}</td>
@@ -90,5 +248,9 @@
 				</tbody>
 			</table>
 		</div>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+	<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+	<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
+	<script type="text/javascript" src="static/status.js"></script>
 	</body>
 </html>

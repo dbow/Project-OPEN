@@ -56,8 +56,8 @@ class Resource(db.Model):
     status: The status of this resource in the database.  Possible values are
       Active (if currently visible on the wiki and frontend), Incomplete (if 
       visible on the wiki but we can't pull enough information to show in the
-      frontend), or Deleted (if syncs with the wiki no longer return this
-      page).
+      frontend), Deleted (if syncs with the wiki no longer return this page),
+      or Excluded (if this isn't actually a resource page).
     last_updated: The date and time that this resource was last synced to the
       wiki content.
   """
@@ -75,7 +75,10 @@ class Resource(db.Model):
   hours = db.TextProperty()
   languages = db.StringProperty()
   image = db.BlobProperty()
-  status = db.StringProperty(choices=['Active','Incomplete','Deleted'])
+  status = db.StringProperty(choices=['Active',
+                                      'Incomplete',
+                                      'Deleted',
+                                      'Excluded'])
   last_updated = db.DateTimeProperty()
 
 
@@ -102,13 +105,33 @@ class WikiStatusHandler(webapp.RequestHandler):
 
     complete_resources = Resource().all().filter('status =', 'Active')
     incomplete_resources = Resource().all().filter('status =', 'Incomplete')
+    excluded_resources = Resource().all().filter('status =', 'Excluded')
+    deleted_resources = Resource().all().filter('status =', 'Deleted')
 
     template_values = {
         'complete_resources': complete_resources,
         'incomplete_resources': incomplete_resources,
+        'excluded_resources': excluded_resources,
+        'deleted_resources': deleted_resources
     }
     path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
     self.response.out.write(template.render(path, template_values))
+
+  def post(self):
+    """Updates the Status of the selected resource."""
+
+    wikiurl = self.request.get('wiki_url')
+    action = self.request.get('action')
+    if action == 'Update':
+      status = self.request.get('status')
+      resource = Resource().all().filter('wikiurl =', wikiurl).get()
+      resource.status = status
+      resource.put()
+    if action == 'Sync':
+      page_to_list = [wikiurl]
+      syncResources(page_to_list)
+
+    self.redirect('/wikistatus')
 
 
 class DirectionsHandler(webapp.RequestHandler):
@@ -240,6 +263,40 @@ def getAllPages(resource_pages, continue_query=None):
   return resource_pages
 
 
+def syncResources(resource_pages):
+  """TODO."""
+
+  for resource_page in resource_pages:
+    logging.info('getResourceInfo')
+    logging.info(resource_page)
+    resource_info = getResourceInfo(resource_page)
+    decoded_url = resource_page.decode('utf-8')
+
+    resource = Resource().all().filter('wikiurl =', decoded_url).get()
+    if not resource:
+      resource = Resource()
+      resource.wikiurl = decoded_url
+    resource.name = resource_info['Name']
+  
+    if resource_info['Property Success'] == True:
+      resource.summary = resource_info['SummaryText']
+      resource.categories = resource_info['Categories']
+      resource.address = resource_info['Address']
+      # geocoded_address = 
+      resource.phone = resource_info['Phone_Number']
+      resource.email = resource_info['Email']
+      resource.website = resource_info['Website']
+      resource.contacts = resource_info['Contact-28s-29']
+      resource.hours = resource_info['Hours']
+      resource.languages = resource_info['Language-28s-29']
+      resource.status = 'Active'
+    else:
+      resource.status = 'Incomplete'
+    resource.last_updated = datetime.datetime.now()
+    resource.put()
+    time.sleep(.1)
+
+
 class WikiSyncTaskHandler(webapp.RequestHandler):
   """TODO."""
 
@@ -252,36 +309,7 @@ class WikiSyncTaskHandler(webapp.RequestHandler):
 
     resource_list = []
     resource_pages = getAllPages(resource_list)
-
-    for resource_page in resource_pages:
-      logging.info('getResourceInfo')
-      logging.info(resource_page)
-      resource_info = getResourceInfo(resource_page)
-      decoded_url = resource_page.decode('utf-8')
-
-      resource = Resource().all().filter('wikiurl =', decoded_url).get()
-      if not resource:
-        resource = Resource()
-        resource.wikiurl = decoded_url
-      resource.name = resource_info['Name']
-    
-      if resource_info['Property Success'] == True:
-        resource.summary = resource_info['SummaryText']
-        resource.categories = resource_info['Categories']
-        resource.address = resource_info['Address']
-        # geocoded_address = 
-        resource.phone = resource_info['Phone_Number']
-        resource.email = resource_info['Email']
-        resource.website = resource_info['Website']
-        resource.contacts = resource_info['Contact-28s-29']
-        resource.hours = resource_info['Hours']
-        resource.languages = resource_info['Language-28s-29']
-        resource.status = 'Active'
-      else:
-        resource.status = 'Incomplete'
-      resource.last_updated = datetime.datetime.now()
-      resource.put()
-      time.sleep(.1)
+    syncResources(resource_pages)
 
 
 class WikiSyncLauncher(webapp.RequestHandler):
