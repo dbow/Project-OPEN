@@ -22,10 +22,14 @@ import httplib2
 import time
 import urllib
 from xml.dom.minidom import parseString
+from authorization.oauth import OAuth
+from sql.sqlbuilder import SQL
+import ftclient
 
 from google.appengine.ext import webapp, db
 from google.appengine.ext.webapp import util, template
 from google.appengine.api import taskqueue
+from google.appengine.api import users
 
 
 WIKI_URL = 'http://sfhomeless.wikia.com/'
@@ -44,7 +48,6 @@ class Resource(db.Model):
     summary: A paragraph summary of the resource.
     categories: A list of categories that this resource has been tagged with.
     address: The resource's address.
-    geocoded_address: The geocoded address as a lat/long.
     phone: The resource's phone number.
     email: The resource's email address.
     website: The resource's website.
@@ -67,7 +70,6 @@ class Resource(db.Model):
   summary = db.TextProperty()
   categories = db.StringListProperty()
   address = db.PostalAddressProperty()
-  geocoded_address = db.GeoPtProperty()
   phone = db.PhoneNumberProperty()
   email = db.EmailProperty()
   website = db.LinkProperty()
@@ -80,6 +82,25 @@ class Resource(db.Model):
                                       'Deleted',
                                       'Excluded'])
   last_updated = db.DateTimeProperty()
+
+
+class SavedMap(db.Model):
+  """TODO."""
+
+  url = db.StringProperty()
+  resources = db.StringListProperty()
+
+
+class OAuthCredentials(db.Model):
+  """TODO."""
+
+  user = db.UserProperty()
+  consumer_key = db.StringProperty(default='anonymous')
+  consumer_secret = db.StringProperty(default='anonymous')
+  token = db.StringProperty()
+  secret = db.StringProperty()
+  temp_token = db.StringProperty()
+  temp_secret = db.StringProperty()
 
 
 class MainHandler(webapp.RequestHandler):
@@ -282,7 +303,6 @@ def syncResources(resource_pages):
       resource.summary = resource_info['SummaryText']
       resource.categories = resource_info['Categories']
       resource.address = resource_info['Address']
-      # geocoded_address = 
       resource.phone = resource_info['Phone_Number']
       resource.email = resource_info['Email']
       resource.website = resource_info['Website']
@@ -303,10 +323,6 @@ class WikiSyncTaskHandler(webapp.RequestHandler):
   def post(self):
     """TODO."""
 
-    # TODO(dbow): Maybe use the following maintenance script:
-    # http://svn.wikimedia.org/svnroot/mediawiki/trunk/extensions\
-    # /SemanticMediaWiki/maintenance/SMW_dumpRDF.php
-
     resource_list = []
     resource_pages = getAllPages(resource_list)
     syncResources(resource_pages)
@@ -322,12 +338,93 @@ class WikiSyncLauncher(webapp.RequestHandler):
     self.response.out.write('Task launched.')
 
 
+class FusionTablesCredentialsHandler(webapp.RequestHandler):
+  """Retrieves an access token for talking to the Fusion tables API."""
+
+  def get(self):
+    """Completes the OAuth dance and stores credentials in datastore."""
+
+    auth = self.request.get('auth')
+    user = users.get_current_user()
+    oauth_credentials = OAuthCredentials.all().filter('user = ', user).get()
+    if not oauth_credentials:
+      oauth_credentials = OAuthCredentials(user=user)
+      oauth_credentials.put()
+    consumer_key = oauth_credentials.consumer_key
+    consumer_secret = oauth_credentials.consumer_secret
+  
+    callback_url = 'http://localhost:8080/fusioncredentials?auth=1'
+    if not auth:
+      url, token, secret = OAuth().generateAuthorizationURL(consumer_key,
+                                                            consumer_secret,
+                                                            consumer_key,
+                                                            callback_url)
+      oauth_credentials.temp_token = token
+      oauth_credentials.temp_secret = secret
+      oauth_credentials.put()
+      self.redirect(url)
+    else:
+      token, secret = OAuth().authorize(consumer_key,
+                                        consumer_secret,
+                                        oauth_credentials.temp_token,
+                                        oauth_credentials.temp_secret)
+      oauth_credentials.token = token
+      oauth_credentials.secret = secret
+      oauth_credentials.put()
+      self.redirect('/fusionsync')
+
+
+class FusionTablesSyncHandler(webapp.RequestHandler):
+  """Pushes information from datastore into FusionTables."""
+
+  def get(self):
+    """For each Active resource, creates a row in a Fusion Table."""
+
+    user = users.get_current_user()
+    oauth_credentials = OAuthCredentials.all().filter('user = ', user).get()
+    if not oauth_credentials:
+      self.redirect('/fusioncredentials')
+    else:
+      tableid = 1293272
+      tfmt = '%A, %d. %B %Y %I:%M%p'
+      oauth_client = ftclient.OAuthFTClient(oauth_credentials.consumer_key,
+                                            oauth_credentials.consumer_secret,
+                                            oauth_credentials.token,
+                                            oauth_credentials.secret)
+      resources = Resource().all().filter('status =', 'Active')
+      for resource in resources:
+        encoded_categories = []
+        for category in resource.categories:
+          encoded_categories.append(category.encode('utf-8'))
+        summary = 'None'
+        if resource.summary:
+          summary = resource.summary.encode('utf-8')
+        row_info = {'ID': str(resource.key().id()),
+                    'Name': resource.name.encode('utf-8'),
+                    'Wiki URL': str(resource.wikiurl),
+                    'Summary': summary,
+                    'Categories': str(encoded_categories),
+                    'Address': resource.address.encode('utf-8'),
+                    'Phone': str(resource.phone),
+                    'Email': str(resource.email),
+                    'Website': str(resource.website),
+                    'Contacts': str(resource.contacts),
+                    'Hours': str(resource.hours),
+                    'Languages': str(resource.languages),
+                    'Image URL': 'None',
+                    'Last Updated': resource.last_updated.strftime(tfmt)}
+        logging.info(row_info)
+        response = oauth_client.query(SQL().insert(tableid, row_info))
+
+
 def main():
     application = webapp.WSGIApplication(
         [('/', MainHandler),
          ('/wikistatus', WikiStatusHandler),
          ('/wikisync', WikiSyncLauncher),
          ('/directions', DirectionsHandler),
+         ('/fusioncredentials', FusionTablesCredentialsHandler),
+         ('/fusionsync', FusionTablesSyncHandler),
          ('/task/wikisync', WikiSyncTaskHandler)],
         debug=True)
     util.run_wsgi_app(application)

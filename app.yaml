@@ -4,6 +4,10 @@ runtime: python
 api_version: 1
 
 handlers:
+- url: /googlecf422d98732d787d.html
+  static_files: static/googlecf422d98732d787d.html
+  upload: static/googlecf422d98732d787d.html
+
 - url: /static
   static_dir: static
 
