@@ -103,75 +103,6 @@ class OAuthCredentials(db.Model):
   temp_secret = db.StringProperty()
 
 
-class MainHandler(webapp.RequestHandler):
-  """The main site page providing a frontend to browse the resources."""
-
-  def get(self):
-    """Retrieves resources and passes them to the frontend."""
-
-    resources = Resource().all().filter('status =', 'Active')
-
-    template_values = {
-        'resources': resources
-    }
-    path = os.path.join(os.path.dirname(__file__), 'index.html')
-    self.response.out.write(template.render(path, template_values))
-
-
-class WikiStatusHandler(webapp.RequestHandler):
-  """A development page to display all synced resources."""
-
-  def get(self):
-    """Presents Active and Incomplete resources."""
-
-    complete_resources = Resource().all().filter('status =', 'Active')
-    incomplete_resources = Resource().all().filter('status =', 'Incomplete')
-    excluded_resources = Resource().all().filter('status =', 'Excluded')
-    deleted_resources = Resource().all().filter('status =', 'Deleted')
-
-    template_values = {
-        'complete_resources': complete_resources,
-        'incomplete_resources': incomplete_resources,
-        'excluded_resources': excluded_resources,
-        'deleted_resources': deleted_resources
-    }
-    path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
-    self.response.out.write(template.render(path, template_values))
-
-  def post(self):
-    """Updates the Status of the selected resource."""
-
-    wikiurl = self.request.get('wiki_url')
-    action = self.request.get('action')
-    if action == 'Update':
-      status = self.request.get('status')
-      resource = Resource().all().filter('wikiurl =', wikiurl).get()
-      resource.status = status
-      resource.put()
-    if action == 'Sync':
-      page_to_list = [wikiurl]
-      syncResources(page_to_list)
-
-    self.redirect('/wikistatus')
-
-
-class DirectionsHandler(webapp.RequestHandler):
-  """The directions page where a user can find directions to resources."""
-
-  def get(self):
-    """Retrieves origin and destination and passes them to the frontend."""
-
-    origin = self.request.get('origin')
-    destination = self.request.get('destination')
-
-    template_values = {
-      'origin': origin,
-      'destination': destination,
-    }    
-    path = os.path.join(os.path.dirname(__file__), 'directions.html')
-    self.response.out.write(template.render(path, template_values))
-
-
 def getElementValue(semantic_property, element):
   """Retrieves the provided value from the provided XML node.
 
@@ -259,8 +190,9 @@ def getResourceInfo(resource_page):
 def getAllPages(resource_pages, continue_query=None):
   """TODO."""
 
-  QUERY_URL = str('http://sfhomeless.wikia.com/api.php?'
-                  'action=query&list=allpages&aplimit=500&format=xml')
+  QUERY_URL = str('http://sfhomeless.wikia.com/api.php?action=query&'
+                  'list=allpages&aplimit=500&format=xml'
+                  '&apfilterredir=nonredirects')
   if continue_query:
     QUERY_URL = QUERY_URL + '&apfrom=' + urllib.quote(continue_query)
 
@@ -415,6 +347,79 @@ class FusionTablesSyncHandler(webapp.RequestHandler):
                     'Last Updated': resource.last_updated.strftime(tfmt)}
         logging.info(row_info)
         response = oauth_client.query(SQL().insert(tableid, row_info))
+
+
+class MainHandler(webapp.RequestHandler):
+  """The main site page providing a frontend to browse the resources."""
+
+  def get(self):
+    """Retrieves resources and passes them to the frontend."""
+
+    resources = Resource().all().filter('status =', 'Active')
+
+    template_values = {
+        'resources': resources
+    }
+    path = os.path.join(os.path.dirname(__file__), 'index.html')
+    self.response.out.write(template.render(path, template_values))
+
+
+class WikiStatusHandler(webapp.RequestHandler):
+  """A development page to display all synced resources."""
+
+  def get(self):
+    """Presents Active and Incomplete resources."""
+
+    complete_resources = Resource().all().filter('status =', 'Active')
+    incomplete_resources = Resource().all().filter('status =', 'Incomplete')
+    excluded_resources = Resource().all().filter('status =', 'Excluded')
+    deleted_resources = Resource().all().filter('status =', 'Deleted')
+
+    template_values = {
+        'complete_resources': complete_resources,
+        'complete_num': complete_resources.count(),
+        'incomplete_resources': incomplete_resources,
+        'incomplete_num': incomplete_resources.count(),
+        'excluded_resources': excluded_resources,
+        'excluded_num': excluded_resources.count(),
+        'deleted_resources': deleted_resources,
+        'deleted_num': deleted_resources.count()
+    }
+    path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
+    self.response.out.write(template.render(path, template_values))
+
+  def post(self):
+    """Updates the Status of the selected resource."""
+
+    wikiurl = self.request.get('wiki_url')
+    action = self.request.get('action')
+    if action == 'Update':
+      status = self.request.get('status')
+      resource = Resource().all().filter('wikiurl =', wikiurl).get()
+      resource.status = status
+      resource.put()
+    if action == 'Sync':
+      page_to_list = [wikiurl]
+      syncResources(page_to_list)
+
+    self.redirect('/wikistatus')
+
+
+class DirectionsHandler(webapp.RequestHandler):
+  """The directions page where a user can find directions to resources."""
+
+  def get(self):
+    """Retrieves origin and destination and passes them to the frontend."""
+
+    origin = self.request.get('origin')
+    destination = self.request.get('destination')
+
+    template_values = {
+      'origin': origin,
+      'destination': destination,
+    }    
+    path = os.path.join(os.path.dirname(__file__), 'directions.html')
+    self.response.out.write(template.render(path, template_values))
 
 
 def main():
