@@ -21,7 +21,7 @@
 				<li>Click the dropdown arrow next to 'Edit with Form' and select 'Edit this page'.</li>
 				<li>Click the 'X' next to the 'Resource' category you previously added, to remove it.</li>
 				<li>Click 'Publish'</li>
-				<li>Go back to this page and click 'Sync this resource' next to the resource you updated to sync the changes to the database.  It should now appear in the 'Active' section with the latest information!</li>
+				<li>Go back to this page and click 'Sync to Wiki' next to the resource you updated to sync the changes to the database.  It should now appear in the 'Active' section with the latest information!</li>
 			</ol>
 			<p><strong>Note:</strong> There are some pages in the Wiki that are not suitable as Resources in the frontend for projectOPEN.  These include the following:
 				<ul>
@@ -31,9 +31,10 @@
 					<li>It has incomplete or incomprehensible information</li>
 				</ul>If the page you go to turns out to not be a resource with information that should appear in the frontend, go back to this page and update the page's status to 'Excluded' in the 'Modify Status' column below.</p>
 	    </div>
+	    {% autoescape on %}
 		<div id="incomplete">
 			<h2>Incomplete pages</h2>
-			<h4>{{ incomplete_num }} remaining</h4>
+			<h4 id="incomplete_num"></h4>
 			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
 				<tbody>
 					<tr>
@@ -43,8 +44,8 @@
 						<th>Wiki URL</th>
 						<th>Summary</th>
 						<th>Categories</th>
+						<th>Frontend Categories</th>
 						<th>Address</th>
-						<th>Geocoded Address</th>
 						<th>Phone</th>
 						<th>Email</th>
 						<th>Website</th>
@@ -65,13 +66,20 @@
 							<option value="Excluded">Excluded</option>
 							</select>
 							<input type="submit" value="Update"></input>
+							<br />Reason: <br />
+							{% if not incomplete_resource.address %}
+							No address<br />
+							{% endif %}
+							{% if not incomplete_resource.frontend_categories %}
+							No frontend categories<br />
+							{% endif %}
 						</td>
-						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_sync"><input type="submit" value="Sync to Wiki"></input></td>
 						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ incomplete_resource.wikiurl }}">{{ incomplete_resource.wikiurl }}</a></td>
 						<td>{{ incomplete_resource.summary }}</td>
 						<td>{{ incomplete_resource.categories }}</td>
+						<td>{{ incomplete_resource.frontend_categories }}</td>
 						<td>{{ incomplete_resource.address }}</td>
-						<td>{{ incomplete_resource.geocoded_address }}</td>
 						<td>{{ incomplete_resource.phone }}</td>
 						<td>{{ incomplete_resource.email }}</td>
 						<td>{{ incomplete_resource.website }}</td>
@@ -88,7 +96,7 @@
 		</div>	
 		<div id="excluded">
 			<h2>Excluded pages</h2>
-			<h4>{{ excluded_num }} total</h4>
+			<h4 id="excluded_num"></h4>
 			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
 				<tbody>
 					<tr>
@@ -98,8 +106,8 @@
 						<th>Wiki URL</th>
 						<th>Summary</th>
 						<th>Categories</th>
+						<th>Frontend Categories</th>
 						<th>Address</th>
-						<th>Geocoded Address</th>
 						<th>Phone</th>
 						<th>Email</th>
 						<th>Website</th>
@@ -121,12 +129,12 @@
 							</select>
 							<input type="submit" value="Update"></input>
 						</td>
-						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_sync"><input type="submit" value="Sync to Wiki"></input></td>
 						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ excluded_resource.wikiurl }}">{{ excluded_resource.wikiurl }}</a></td>
 						<td>{{ excluded_resource.summary }}</td>
 						<td>{{ excluded_resource.categories }}</td>
+						<td>{{ excluded_resource.frontend_categories }}</td>
 						<td>{{ excluded_resource.address }}</td>
-						<td>{{ excluded_resource.geocoded_address }}</td>
 						<td>{{ excluded_resource.phone }}</td>
 						<td>{{ excluded_resource.email }}</td>
 						<td>{{ excluded_resource.website }}</td>
@@ -143,7 +151,7 @@
 		</div>
 		<div id="deleted">
 			<h2>Deleted pages</h2>
-			<h4>{{ deleted_num }} total</h4>
+			<h4 id="deleted_num"></h4>
 			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
 				<tbody>
 					<tr>
@@ -153,8 +161,8 @@
 						<th>Wiki URL</th>
 						<th>Summary</th>
 						<th>Categories</th>
+						<th>Frontend Categories</th>
 						<th>Address</th>
-						<th>Geocoded Address</th>
 						<th>Phone</th>
 						<th>Email</th>
 						<th>Website</th>
@@ -177,12 +185,12 @@
 							</select>
 							<input type="submit" value="Update"></input>
 						</td>
-						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_sync"><input type="submit" value="Sync to Wiki"></input></td>
 						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ deleted_resource.wikiurl }}">{{ deleted_resource.wikiurl }}</a></td>
 						<td>{{ deleted_resource.summary }}</td>
 						<td>{{ deleted_resource.categories }}</td>
+						<td>{{ deleted_resource.frontend_categories }}</td>
 						<td>{{ deleted_resource.address }}</td>
-						<td>{{ deleted_resource.geocoded_address }}</td>
 						<td>{{ deleted_resource.phone }}</td>
 						<td>{{ deleted_resource.email }}</td>
 						<td>{{ deleted_resource.website }}</td>
@@ -199,18 +207,19 @@
 		</div>
 		<div id="complete">
 			<h2>Complete pages</h2>
-			<h4>{{ complete_num }} total</h4>
+			<h4 id="complete_num"></h4>
 			<table class="resource_table" border="1" cellspacing="0" cellpadding="0">
 				<tbody>
 					<tr>
 						<th>Name</th>
 						<th>Modify Status</th>
 						<th>Sync to Wiki</th>
+						<th>Sync to FusionTables</th>
 						<th>Wiki URL</th>
 						<th>Summary</th>
 						<th>Categories</th>
+						<th>Frontend Categories</th>
 						<th>Address</th>
-						<th>Geocoded Address</th>
 						<th>Phone</th>
 						<th>Email</th>
 						<th>Website</th>
@@ -232,12 +241,13 @@
 							</select>
 							<input type="submit" value="Update"></input>
 						</td>
-						<td class="resource_sync"><input type="submit" value="Sync this resource"></input></td>
+						<td class="resource_sync"><input type="submit" value="Sync to Wiki"></input></td>
+						<td class="resource_fusion_sync"><input type="submit" value="Sync to Fusion Tables"></input></td>
 						<td class="resource_url"><a href="http://sfhomeless.wikia.com/wiki/{{ complete_resource.wikiurl }}">{{ complete_resource.wikiurl }}</a></td>
 						<td>{{ complete_resource.summary }}</td>
 						<td>{{ complete_resource.categories }}</td>
+						<td>{{ complete_resource.frontend_categories }}</td>
 						<td>{{ complete_resource.address }}</td>
-						<td>{{ complete_resource.geocoded_address }}</td>
 						<td>{{ complete_resource.phone }}</td>
 						<td>{{ complete_resource.email }}</td>
 						<td>{{ complete_resource.website }}</td>
@@ -252,6 +262,7 @@
 				</tbody>
 			</table>
 		</div>
+		{% endautoescape %}
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
 	<script type="text/javascript" src="http://www.google.com/jsapi"></script>
 	<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
