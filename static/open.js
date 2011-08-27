@@ -74,7 +74,22 @@ function createMap(){
     mapTypeId: 'roadmap'
   });
 
-  layer = new google.maps.FusionTablesLayer(FUSION_ID);
+  layer = new google.maps.FusionTablesLayer({
+    query: {
+      select: 'Address',
+      from: FUSION_ID
+    },
+    styles: [{
+      markerOptions: {
+        iconName: "small_yellow"
+      }
+    }, {
+      where: "Categories CONTAINS 'Alcohol'",
+      markerOptions: {
+        iconName: "small_blue"
+      }
+    }]
+  });
   layer.setMap(map);
   setHeights();
 
