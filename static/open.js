@@ -91,6 +91,34 @@ function createMap(){
     }]
   });
   layer.setMap(map);
+
+    //add a click listener to the layer
+    google.maps.event.addListener(layer, 'click', function(e) {
+      //update the content of the InfoWindow
+      e.infoWindowHtml = '<div style="color:#e4542e; font-size:18pt">' + e.row['Name'].value + '</div>';
+      if (e.row['Summary'].value != 'None') {
+        e.infoWindowHtml += '<div style="font-style:italic; font-size:12pt">';
+        e.infoWindowHtml += e.row['Summary'].value;
+        e.infoWindowHtml += '</div>';
+      }
+      if (e.row['Address'].value != 'None' ||
+          e.row['Phone'].value != 'None' ||
+          e.row['Hours'].value != 'None') {
+        e.infoWindowHtml += '<div style="font-style:italic; font-size:12pt">';
+        if (e.row['Address'].value != 'None') {
+          e.infoWindowHtml += e.row['Address'].value + '</br>';
+        }
+        if (e.row['Phone'].value != 'None') {
+          e.infoWindowHtml += e.row['Phone'].value + '</br>';
+        }
+        if (e.row['Hours'].value != 'None') {
+          e.infoWindowHtml += e.row['Hours'].value;
+        }
+        e.infoWindowHtml += '</div>';
+      }
+    });
+
+
   setHeights();
 
   google.maps.event.addListener(map, 'bounds_changed', function() {
