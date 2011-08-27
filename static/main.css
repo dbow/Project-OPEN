@@ -408,6 +408,11 @@ a:visited {
 	    .table-toggle {
 	    	color: #666;
 	    	cursor: pointer;
+	    	width:125px;
+	    	background: url(img/filterarrowhide.png) right center no-repeat;
+	    }
+	    .table-toggle.ui-off {
+	      background-image: url(img/filterarrow.png);
 	    }
 	    .table-more {
 	    	color: #666;

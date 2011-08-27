@@ -19,6 +19,7 @@ import os
 from google.appengine.dist import use_library
 use_library('django', '1.2')
 import logging
+import hashlib
 import httplib2
 import time
 import urllib
@@ -29,11 +30,13 @@ import ftclient
 
 from google.appengine.ext import webapp, db
 from google.appengine.ext.webapp import util, template
+from google.appengine.api import images
 from google.appengine.api import taskqueue
 from google.appengine.api import users
 from google.appengine.api import quota
 
 WIKI_URL = 'http://sfhomeless.wikia.com/'
+
 PARENT_CATEGORIES = ['Employment',
                      'Government',
                      'Housing',
@@ -41,7 +44,12 @@ PARENT_CATEGORIES = ['Employment',
                      'Medical',
                      'Special Groups',
                      'Other']
+
 FUSION_TABLE_ID = 1293272
+
+IMAGE_MAX_WIDTH = 160
+IMAGE_MAX_HEIGHT = 120
+
 
 class Resource(db.Model):
   """A resource pulled from the sfhomeless.net wiki.
@@ -252,6 +260,22 @@ def getResourceInfo(resource_page):
   return resource_info
 
 
+def getResourceImage(resource_page):
+  """TODO."""
+
+  url = WIKI_URL + str('api.php?action=imageserving&format=xml&wisTitle=' +
+                       urllib.quote(resource_page, '%'))
+  http = httplib2.Http()
+  response, content = http.request(url, 'GET')
+  response_xml = parseString(content).getElementsByTagName('image')[0]
+  image_url = response_xml.getAttribute('imageserving')
+  if image_url:
+    response, content = http.request(image_url, 'GET')
+    return content
+  else:
+    return None    
+
+
 def getAllPages(resource_pages, continue_query=None):
   """TODO."""
 
@@ -328,6 +352,12 @@ def syncResource(resource_page):
     if resource_info['Language-28s-29']:
       languages = resource_info['Language-28s-29'].replace('\n', '')
       resource.languages = languages.decode('utf-8')
+  image_data = getResourceImage(resource_page)
+  if image_data:
+    image = images.Image(str(image_data))
+    image.resize(width=160, height=120)
+    resized_image = image.execute_transforms()
+    resource.image = db.Blob(resized_image)
   resource.put()
 
 
@@ -343,7 +373,6 @@ def updateFusionTableRow(wikiurl):
                                         oauth_credentials.secret)
   decoded_url = wikiurl.decode('utf-8')
   resource = Resource().all().filter('wikiurl =', decoded_url).get()
-  logging.info(resource.website)
   logging.info(resource.name)
   hours = resource.hours
   if not resource.hours:
@@ -369,6 +398,9 @@ def updateFusionTableRow(wikiurl):
   categories = []
   for category in resource.frontend_categories:
     categories.append(category.encode('utf-8'))
+  image = 'False'
+  if resource.image:
+    image = 'True'
   row_info = {'ID': str(resource.key().id()),
               'Name': resource.name.encode('utf-8'),
               'Address': resource.address.encode('utf-8'),
@@ -381,7 +413,7 @@ def updateFusionTableRow(wikiurl):
               'Email': email.encode('utf-8'),
               'Contacts': contacts.encode('utf-8'),
               'Languages': language.encode('utf-8'),
-              'Image URL': 'None',
+              'Image': image,
               'Last Updated': resource.last_updated.strftime(tfmt)}
   logging.info(row_info)
   response = oauth_client.query(SQL().insert(FUSION_TABLE_ID, row_info))
@@ -610,9 +642,40 @@ class MainHandler(webapp.RequestHandler):
     self.response.out.write(template.render(path, template_values))
 
 
+class GetImage(webapp.RequestHandler):
+  """TODO."""
+  def get(self):
+    """TODO."""
+
+    wikiurl = self.request.get('wikiurl')
+    resource = Resource().all().filter('wikiurl =', wikiurl).get()
+    if (resource and resource.image):
+      self.response.headers['Content-Type'] = 'image/jpeg'
+      self.response.out.write(resource.image)
+    else:
+      self.response.out.write(None)
+
+
+class SaveMapHandler(webapp.RequestHandler):
+  """TODO."""
+
+  def get(self):
+    """TODO."""
+
+    id_list = self.request.get('ids').sort()
+    hashed_ids = hashlib.sha1(''.join(map(str, id_list))).hexdigest()
+    saved_map = SavedMap().all().filter('url =', hashed_ids).get()
+    if not saved_map:
+      saved_map = SavedMap(url=hashed_ids)
+      saved_map.resources = id_list
+      saved_map.put()
+
+
 def main():
     application = webapp.WSGIApplication(
         [('/', MainHandler),
+         ('/image', GetImage),
+         ('/save', SaveMapHandler),
          ('/wikistatus', WikiStatusHandler),  #TODO(dbow): make admin-only.
          ('/category', CategorySyncLauncher),  #admin-only.
          ('/task/category', CategorySyncTaskHandler), #admin-only.

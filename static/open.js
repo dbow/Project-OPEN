@@ -7,7 +7,8 @@ var OP = {};
 var map;
 var initial_bounds;
 var sf;
-var FUSION_URL = 1293272;
+var FUSION_ID = 1293272;
+var WIKI_URL = 'sfhomeless.wikia.com/wiki/';
 
 function changeData(update_map) {
   var whereClause = "";
@@ -21,7 +22,7 @@ function changeData(update_map) {
     }
   }
   
-  var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary' FROM " + FUSION_URL + whereClause;
+  var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL' FROM " + FUSION_ID + whereClause;
   
   $.ajax({
   	url: 'http://www.google.com/fusiontables/api/query',
@@ -36,7 +37,7 @@ function changeData(update_map) {
 }
 
 function getCategoryList() {
-  var queryText = encodeURIComponent("SELECT 'Categories' FROM " + FUSION_URL);
+  var queryText = encodeURIComponent("SELECT 'Categories' FROM " + FUSION_ID);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
   query.send(parseList);
 }
@@ -73,7 +74,7 @@ function createMap(){
     mapTypeId: 'roadmap'
   });
 
-  layer = new google.maps.FusionTablesLayer(FUSION_URL);
+  layer = new google.maps.FusionTablesLayer(FUSION_ID);
   layer.setMap(map);
   setHeights();
 
@@ -283,23 +284,37 @@ OP.Data = (function () {
             //        console.log("Address not found: " + rows[i][3]);
             //      }
             //    });
-            var catValues = rows[i][4].replace('[','').replace(']','')
+            var catValues = rows[i][4].replace('[','').replace(']','').replace(/'/g,'')
+            var websiteContent = '';
+            if (rows[i][2] != 'None') {
+              websiteContent = '<div class="cell table-link"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][2] + '</a></div>';
+            }
+            var summaryInfo = '';
+            var showMoreInfo = '';
+            if (rows[i][5] != 'None') {
+              summaryInfo = '<div class="table-more" style="display: none;">' +
+	        			'<div class="cell table-info">' + rows[i][5] + '</div>' +
+	        		'</div>';
+              showMoreInfo = '<div class="table-toggle">More Information</div>';
+            }
+            var imageInfo = '<img class="table-img" />';
+            if (rows[i][6] == 'True') {
+              imageInfo = '<img class="table-img" src="/image?wikiurl=' + rows[i][7] + '" />';
+            }
 	        	html +=
-	        	'<div class="row clearfix">' +
+	        	'<div class="row clearfix" id="' + rows[i][1] + '">' +
 	        		'<div class="clearfix">' +
 	        			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
-		        		'<img class="table-img" />' +
+		        		imageInfo +
 		        		'<div class="table-cells">' +
-			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
+			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ WIKI_URL + rows[i][7] +'">' + rows[i][0] + '</a></div>' +
 			        		'<div class="cell table-services">' + catValues + '</div>' +
 			        		'<div class="cell table-address">' + rows[i][3] + '</div>' +
-			        		'<div class="cell table-link"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][2] + '</a></div>' +
-			        		'<div class="table-toggle">More Information</div>' +
+			        		websiteContent +
+			        		showMoreInfo +
 		        		'</div>' +
 	        		'</div>' +
-	        		'<div class="table-more" style="display: none;">' +
-	        			'<div class="cell table-info">' + rows[i][5] + '</div>' +
-	        		'</div>' +
+	        		summaryInfo +
 	        		/*
 '<div class="cell directions"><button>Directions</button></div>' +
 	        		'<div class="cell directions-menu"><form action="/directions" id="directions-form">' +
@@ -432,11 +447,11 @@ OP.Util = (function () {
     	$("#table").delegate('.table-toggle', 'click', function () {
         	var el = $(this);
         	if (el.text() === 'More Information') {
-        		el.text('Less Information');
+        		el.text('Less Information').addClass('ui-off');
         		el.parent().parent().siblings().slideDown();
         	}
         	else {
-        		el.text('More Information');
+        		el.text('More Information').removeClass('ui-off');
         		el.parent().parent().siblings().slideUp();
         	}
         });

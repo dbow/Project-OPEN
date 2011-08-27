@@ -86,7 +86,7 @@
 						<td>{{ incomplete_resource.contacts }}</td>
 						<td>{{ incomplete_resource.hours }}</td>
 						<td>{{ incomplete_resource.languages }}</td>
-						<td>{{ incomplete_resource.image }}</td>
+						<td>{% if incomplete_resource.image %}<img src="/image?wikiurl={{ incomplete_resource.wikiurl }}" />{% endif %}</td>
 						<td>{{ incomplete_resource.status }}</td>
 						<td>{{ incomplete_resource.last_updated }}</td>
 				    </tr>
@@ -141,7 +141,7 @@
 						<td>{{ excluded_resource.contacts }}</td>
 						<td>{{ excluded_resource.hours }}</td>
 						<td>{{ excluded_resource.languages }}</td>
-						<td>{{ excluded_resource.image }}</td>
+						<td>{% if excluded_resource.image %}<img src="/image?wikiurl={{ excluded_resource.wikiurl }}" />{% endif %}</td>
 						<td>{{ excluded_resource.status }}</td>
 						<td>{{ excluded_resource.last_updated }}</td>
 				    </tr>
@@ -197,7 +197,7 @@
 						<td>{{ deleted_resource.contacts }}</td>
 						<td>{{ deleted_resource.hours }}</td>
 						<td>{{ deleted_resource.languages }}</td>
-						<td>{{ deleted_resource.image }}</td>
+						<td>{% if deleted_resource.image %}<img src="/image?wikiurl={{ deleted_resource.wikiurl }}" />{% endif %}</td>
 						<td>{{ deleted_resource.status }}</td>
 						<td>{{ deleted_resource.last_updated }}</td>
 				    </tr>
@@ -254,7 +254,7 @@
 						<td>{{ complete_resource.contacts }}</td>
 						<td>{{ complete_resource.hours }}</td>
 						<td>{{ complete_resource.languages }}</td>
-						<td>{{ complete_resource.image }}</td>
+						<td>{% if complete_resource.image %}<img src="/image?wikiurl={{ complete_resource.wikiurl }}" />{% endif %}</td>
 						<td>{{ complete_resource.status }}</td>
 						<td>{{ complete_resource.last_updated }}</td>
 				    </tr>
