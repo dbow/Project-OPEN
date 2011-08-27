@@ -84,7 +84,7 @@ function createMap(){
         iconName: "small_yellow"
       }
     }, {
-      where: "Categories CONTAINS 'Alcohol'",
+      where: "'Filter Category' = 'Housing'",
       markerOptions: {
         iconName: "small_blue"
       }
