@@ -240,10 +240,14 @@ OP.Data = (function () {
     
     me.filter = function (cats) {
     	var html = '',
+    		table = $("#table").html(''),
+    		row,
     		rows = _cache.table.rows,
     		catsKeyed = {},
     		i, j,
     		search = $("#search-box");
+    		
+    	console.log(cats);
     		
     	_filtered = [];
     
@@ -255,6 +259,8 @@ OP.Data = (function () {
         else {
         	cats = null;
         }
+        
+        table.hide();
         
         //var geocoder = new google.maps.Geocoder();
         //var bounds = new google.maps.LatLngBounds();
@@ -301,7 +307,7 @@ OP.Data = (function () {
             if (rows[i][6] == 'True') {
               imageInfo = '<img class="table-img" src="/image?wikiurl=' + rows[i][7] + '" />';
             }
-	        	html +=
+	        	row = $(
 	        	'<div class="row clearfix" id="' + rows[i][1] + '">' +
 	        		'<div class="clearfix">' +
 	        			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
@@ -323,41 +329,14 @@ OP.Data = (function () {
 								'<input type="submit" value="Get Directions"></form></div>' +
 */
 	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
-	        	'</div>';
+	        	'</div>'
+	        	).data('id', i).appendTo(table);
         	}
         }
         
         //map.fitBounds(bounds);
 
-        $("#table").html(html);
-        
-       /*
- $("#table .name a").hover(function () {
-        	$(this).parent().siblings('.info').fadeIn();
-       	}, function () {
-       		$(this).parent().siblings('.info').stop(true, true).fadeOut();
-       	});
-*/
-       	
-       	$("#table .directions").click(function () {
-       	  var dir_menu = $(this).siblings('.directions-menu');
-       	  if (dir_menu.hasClass("invisible")) {
-       	    dir_menu.removeClass("invisible");
-       	  }
-       	  else {
-       	    dir_menu.addClass("invisible");
-       	  }
-       	});
-       	$("#table .directions").click(function () {
-       	  if($(this).data('displayed')) {
-       	    $(this).siblings('.directions-menu').fadeOut();
-       	    $(this).data('displayed', false);
-       	  }
-       	  else {
-       	    $(this).siblings('.directions-menu').fadeIn();
-       	    $(this).data('displayed', true);
-       	  }
-        }); 
+        $("#table").show();
         
 		//$("#table").html( $.tmpl('table', _cache.table.rows) );
         setHeights();
@@ -405,6 +384,74 @@ for (var i in _filtered) {
     };
     
     return me;
+}());
+
+OP.MyGuide = (function () {
+	var me = {},
+		_current = {},
+		_guides = {};
+		
+	function _clickAdd() {
+		var el = $(this),
+    		id = el.parents('.row').data('id'),
+    		div;
+    		
+    	if (_current[id]) {
+    		return;
+    	}
+    		
+    	_current[id] = true;
+    	
+    	console.log(_current);
+    	
+    	div = $(
+    		'<div class="rail-guide-entry">' +
+    			'<div class="rail-guide-entry-x">x</div>' +
+    			el.siblings('.table-cells').html() +
+    		'</div>'
+    	).data('id', id);
+    	
+    	$('.rail-guide-empty').hide();
+    	$('.rail-guide-added-box').append(div);
+	}
+	
+	function _clickRemove() {
+		var el = $(this).parent(),
+			id = el.data('id');
+	
+		el.fadeOut(function () {
+			el.remove();
+		});
+		
+		delete _current[id];
+	}
+	
+	function _save(callback) {
+		var hash,
+			arr = OP.Util.toArrayKeys(_current);
+		
+		arr.sort();
+		hash = arr.join('_');
+		
+		hash = Crypto.SHA1(hash);
+		
+		callback(hash);
+	}
+	
+	function _link(hash) {
+		
+	}
+	me.link = function () {
+		_save(_link);
+	};
+	
+	me.setUp = function () {
+		//set up table adder
+        $("#table").delegate('.ui-button', 'click', _clickAdd);
+        $('.rail-guide-added-box').delegate('.rail-guide-entry-x', 'click', _clickRemove);
+	};
+	
+	return me;
 }());
 
 OP.Util = (function () {
@@ -463,6 +510,29 @@ OP.Util = (function () {
         $(".rail-show").click(function () {
         	$("#page").removeClass('page-wide');
         });
+        
+        //set up table hide/show
+        $("#table .directions").live('click', function () {
+       	  var dir_menu = $(this).siblings('.directions-menu');
+       	  if (dir_menu.hasClass("invisible")) {
+       	    dir_menu.removeClass("invisible");
+       	  }
+       	  else {
+       	    dir_menu.addClass("invisible");
+       	  }
+       	});
+       	$("#table .directions").live('click', function () {
+       	  if($(this).data('displayed')) {
+       	    $(this).siblings('.directions-menu').fadeOut();
+       	    $(this).data('displayed', false);
+       	  }
+       	  else {
+       	    $(this).siblings('.directions-menu').fadeIn();
+       	    $(this).data('displayed', true);
+       	  }
+        }); 
+        
+        OP.MyGuide.setUp();
     };
     
     me.toArrayKeys = function (obj) {
@@ -474,6 +544,28 @@ OP.Util = (function () {
         
         return arr;
     };
+    
+    me.copyInside = function (inElement) {
+	  if (inElement.createTextRange) {
+	    var range = inElement.createTextRange();
+	    if (range && BodyLoaded==1)
+	      range.execCommand('Copy');
+	  } else {
+	    me.copy(inElement.value);
+	  }
+	}
+	
+	 me.copy = function (text) {
+	    var flashcopier = 'flashcopier';
+	    if(!document.getElementById(flashcopier)) {
+	      var divholder = document.createElement('div');
+	      divholder.id = flashcopier;
+	      document.body.appendChild(divholder);
+	    }
+	    document.getElementById(flashcopier).innerHTML = '';
+	    var divinfo = '<embed src="/static/_clipboard.swf" FlashVars="clipboard='+encodeURIComponent(text)+'" width="0" height="0" type="application/x-shockwave-flash"></embed>';
+	    document.getElementById(flashcopier).innerHTML = divinfo;
+	}
     
     return me;
 }());
