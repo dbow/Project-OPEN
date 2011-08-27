@@ -35,6 +35,8 @@ from google.appengine.api import taskqueue
 from google.appengine.api import users
 from google.appengine.api import quota
 
+from django.utils import simplejson
+
 WIKI_URL = 'http://sfhomeless.wikia.com/'
 
 PARENT_CATEGORIES = ['Employment',
@@ -659,16 +661,21 @@ class GetImage(webapp.RequestHandler):
 class SaveMapHandler(webapp.RequestHandler):
   """TODO."""
 
-  def get(self):
+  def post(self):
     """TODO."""
 
-    id_list = self.request.get('ids').sort()
+    id_list = self.request.get_all('ids[]')
+    id_list.sort()
+    
     hashed_ids = hashlib.sha1(''.join(map(str, id_list))).hexdigest()
     saved_map = SavedMap().all().filter('url =', hashed_ids).get()
     if not saved_map:
       saved_map = SavedMap(url=hashed_ids)
       saved_map.resources = id_list
       saved_map.put()
+      
+    #self.response.headers.add_header('content-type', 'text/json')
+    self.response.out.write(simplejson.dumps(hashed_ids))
 
 
 def main():

@@ -426,29 +426,44 @@ OP.MyGuide = (function () {
 		delete _current[id];
 	}
 	
-	function _save(callback) {
+	me.save = function (callback) {
 		var hash,
 			arr = OP.Util.toArrayKeys(_current);
+			
+		if (!arr.length) {
+			return alert('You have no services in your map.');
+		}
 		
-		arr.sort();
-		hash = arr.join('_');
-		
-		hash = Crypto.SHA1(hash);
-		
-		callback(hash);
-	}
+		$.post('/save', {ids: arr}, function (data) {
+			_guides[data] = arr;
+			callback(data, arr);
+		}, 'json');
+	};
+	
+	me.url = function (hash) {
+		return 'http://project-open.appspot.com/maps/' + hash
+	};
 	
 	function _link(hash) {
-		
+		alert(me.url(hash));
 	}
 	me.link = function () {
-		_save(_link);
+		me.save(_link);
+	};
+	
+	me.email = function () {
+		me.save(function (hash) {
+			window.location = 'mailto:?subject=projectOPEN Map&body=' + me.url(hash);
+		});
 	};
 	
 	me.setUp = function () {
 		//set up table adder
         $("#table").delegate('.ui-button', 'click', _clickAdd);
         $('.rail-guide-added-box').delegate('.rail-guide-entry-x', 'click', _clickRemove);
+        
+        $('.rail-option-link').click(me.link);
+        $('.rail-option-email').click(me.email);
 	};
 	
 	return me;
