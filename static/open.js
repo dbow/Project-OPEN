@@ -7,6 +7,7 @@ var OP = {};
 var map;
 var initial_bounds;
 var sf;
+var FUSION_URL = 1293272;
 
 function changeData(update_map) {
   var whereClause = "";
@@ -20,7 +21,7 @@ function changeData(update_map) {
     }
   }
   
-  var queryText = "SELECT 'Name of org','Sub-category','URL','Address','Services Provided','Other Info' FROM 652548" + whereClause;
+  var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary' FROM " + FUSION_URL + whereClause;
   
   $.ajax({
   	url: 'http://www.google.com/fusiontables/api/query',
@@ -35,7 +36,7 @@ function changeData(update_map) {
 }
 
 function getCategoryList() {
-  var queryText = encodeURIComponent("SELECT 'Sub-category' FROM 652548");
+  var queryText = encodeURIComponent("SELECT 'Categories' FROM " + FUSION_URL);
   var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
   query.send(parseList);
 }
@@ -44,10 +45,15 @@ function parseList(response) {
   category_list = [];
   numRows = response.getDataTable().getNumberOfRows();
   for(i = 0; i < numRows; i++) {
-      new_category = response.getDataTable().getValue(i, 0);
-      if(category_list.indexOf(new_category) < 0) {
-        category_list.push(new_category);
+    new_category = response.getDataTable().getValue(i, 0);
+    category_array = new_category.replace('[','').replace(']','').split(',');
+    catLength = category_array.length;
+    for (y = 0; y < catLength; y++) {
+      var category = category_array[y].replace(/'/g,"");
+      if(category_list.indexOf(category) < 0) {
+        category_list.push(category);
       }
+    }
   }
   final_list = [];
   for(i = 0; i < category_list.length; i++) {
@@ -67,7 +73,7 @@ function createMap(){
     mapTypeId: 'roadmap'
   });
 
-  layer = new google.maps.FusionTablesLayer(652548);
+  layer = new google.maps.FusionTablesLayer(FUSION_URL);
   layer.setMap(map);
   setHeights();
 
@@ -283,6 +289,7 @@ OP.Data = (function () {
             //        console.log("Address not found: " + rows[i][3]);
             //      }
             //    });
+            var catValues = rows[i][4].replace('[','').replace(']','');
 	        	row = $(
 	        	'<div class="row clearfix">' +
 	        		'<div class="clearfix">' +
@@ -290,7 +297,7 @@ OP.Data = (function () {
 		        		'<img class="table-img" />' +
 		        		'<div class="table-cells">' +
 			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
-			        		'<div class="cell table-services">' + rows[i][4] + '</div>' +
+			        		'<div class="cell table-services">' + catValues + '</div>' +
 			        		'<div class="cell table-address">' + rows[i][3] + '</div>' +
 			        		'<div class="cell table-link"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][2] + '</a></div>' +
 			        		'<div class="table-toggle">More Information</div>' +

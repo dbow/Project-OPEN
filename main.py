@@ -16,7 +16,8 @@
 #
 
 import os
-import datetime
+from google.appengine.dist import use_library
+use_library('django', '1.2')
 import logging
 import httplib2
 import time
@@ -30,10 +31,17 @@ from google.appengine.ext import webapp, db
 from google.appengine.ext.webapp import util, template
 from google.appengine.api import taskqueue
 from google.appengine.api import users
-
+from google.appengine.api import quota
 
 WIKI_URL = 'http://sfhomeless.wikia.com/'
-
+PARENT_CATEGORIES = ['Employment',
+                     'Government',
+                     'Housing',
+                     'Legal',
+                     'Medical',
+                     'Special Groups',
+                     'Other']
+FUSION_TABLE_ID = 1293272
 
 class Resource(db.Model):
   """A resource pulled from the sfhomeless.net wiki.
@@ -46,7 +54,9 @@ class Resource(db.Model):
     name: The resource's name.
     wikiurl: The URL at the wiki which corresponds with this resource.
     summary: A paragraph summary of the resource.
-    categories: A list of categories that this resource has been tagged with.
+    categories: The full list of categories tagged to this resource.
+    frontend_categories: The list of categories tagged to this resource that
+      are FrontendCategories entities.
     address: The resource's address.
     phone: The resource's phone number.
     email: The resource's email address.
@@ -67,32 +77,61 @@ class Resource(db.Model):
 
   name = db.StringProperty()
   wikiurl = db.StringProperty()
-  summary = db.TextProperty()
-  categories = db.StringListProperty()
+  summary = db.TextProperty(default=None)
+  categories = db.StringListProperty(default=None)
+  frontend_categories = db.StringListProperty(default=None)
   address = db.PostalAddressProperty()
-  phone = db.PhoneNumberProperty()
-  email = db.EmailProperty()
-  website = db.LinkProperty()
-  contacts = db.StringProperty()
-  hours = db.TextProperty()
-  languages = db.StringProperty()
-  image = db.BlobProperty()
+  phone = db.PhoneNumberProperty(default=None)
+  email = db.EmailProperty(default=None)
+  website = db.LinkProperty(default=None)
+  contacts = db.StringProperty(default=None)
+  hours = db.TextProperty(default=None)
+  languages = db.StringProperty(default=None)
+  image = db.BlobProperty(default=None)
   status = db.StringProperty(choices=['Active',
                                       'Incomplete',
                                       'Deleted',
                                       'Excluded'])
-  last_updated = db.DateTimeProperty()
+  last_updated = db.DateTimeProperty(auto_now=True)
+
+
+class FrontendCategories(db.Model):
+  """The categories to show in the frontend.
+  
+  This is based on the category listings on this page in the wiki:
+  http://sfhomeless.wikia.com/wiki/Categories_Displayed_By_Subject
+  
+  To help users browse the large number of categories (>60) easier,
+  they are grouped into 7 parent categories captured in PARENT_CATEGORIES
+  above.  In the wiki, each Category page has one of the PARENT_CATEGORIES
+  pages listed as a 'Category'.  The processCategories method goes through
+  all the categories that any resource is a part of and determines if it
+  should be in FrontendCategories based on whether it has a parent 'Category'
+  in PARENT_CATEGORIES.
+  """
+
+  name = db.StringProperty()
+  parent_category = db.StringProperty(choices=PARENT_CATEGORIES)
 
 
 class SavedMap(db.Model):
-  """TODO."""
+  """A collection of resources saved by a user.
+  
+  When a user saves or prints or shares a My Guide map they made in the
+  frontend, that specific collection of resource IDs is stored as a
+  SavedMap, with a unique URL.  If the SavedMap has a name property, then
+  it is a Public Map shown in the frontend.  These Public Maps are specially
+  created in collaboration with specific agencies/organizations, and the name
+  value is set in the admin console.
+  """
 
   url = db.StringProperty()
   resources = db.StringListProperty()
+  name = db.StringProperty()
 
 
 class OAuthCredentials(db.Model):
-  """TODO."""
+  """The OAuth Credentials stored to talk to FusionTables."""
 
   user = db.UserProperty()
   consumer_key = db.StringProperty(default='anonymous')
@@ -101,6 +140,12 @@ class OAuthCredentials(db.Model):
   secret = db.StringProperty()
   temp_token = db.StringProperty()
   temp_secret = db.StringProperty()
+
+
+class RunningUser(db.Model):
+  """Stores the admin user whose OAuth credentials are used for tasks."""
+
+  user = db.UserProperty(auto_current_user_add=True)
 
 
 def getElementValue(semantic_property, element):
@@ -135,8 +180,27 @@ def getResourceCategories(resource_xml):
   category_list = []
   for category in categories:
     text = category.getElementsByTagName('rdfs:label')[0].childNodes[0].data
-    category_list.append(text)
+    category_list.append(text.encode('utf-8'))
+
   return category_list
+
+
+def getResourceAddress(resource_xml):
+  """Retrieves the Address value from the provided xml.
+  
+  Args:
+    resource_xml: The XML document of a given resource.
+
+  Returns:
+    The string representing the address of the resource.
+  """
+
+  address = resource_xml.getElementsByTagName('property:Address')
+  address_value = None
+  if address:
+    address_value = getElementValue('Address', address[0]).encode('utf-8')
+
+  return address_value
 
 
 def getResourceInfo(resource_page):
@@ -153,14 +217,13 @@ def getResourceInfo(resource_page):
       resource.
   """
 
-  url = WIKI_URL + str('/index.php?title=Special:ExportRDF&page=' +
-                       resource_page)
+  url = WIKI_URL + str('index.php?title=Special:ExportRDF&page=' +
+                       urllib.quote(resource_page, '%'))
   http = httplib2.Http()
   response, content = http.request(url, 'GET')
   response_xml = parseString(content).getElementsByTagName('rdf:RDF')[0]
   
   properties = [
-      'Address',
       'Phone_Number',
       'Email',
       'Website',
@@ -171,15 +234,17 @@ def getResourceInfo(resource_page):
   ]
   resource_info = {}
   name_node = response_xml.getElementsByTagName('rdfs:label')[0]
-  resource_info['Name'] = name_node.childNodes[0].nodeValue
+  resource_info['Name'] = name_node.childNodes[0].nodeValue.encode('utf-8')
   resource_info['Categories'] = getResourceCategories(response_xml)
+  resource_info['Address'] = getResourceAddress(response_xml)
+
   resource_info['Property Success'] = False
   for semantic_property in properties:
     attr_info = response_xml.getElementsByTagName('property:' +
                                                   semantic_property)
     if attr_info:
-      resource_info[semantic_property] = getElementValue(semantic_property,
-                                                         attr_info[0])
+      property_value = getElementValue(semantic_property, attr_info[0])
+      resource_info[semantic_property] = property_value.encode('utf-8')
       resource_info['Property Success'] = True
     else:
       resource_info[semantic_property] = None
@@ -190,9 +255,9 @@ def getResourceInfo(resource_page):
 def getAllPages(resource_pages, continue_query=None):
   """TODO."""
 
-  QUERY_URL = str('http://sfhomeless.wikia.com/api.php?action=query&'
-                  'list=allpages&aplimit=500&format=xml'
-                  '&apfilterredir=nonredirects')
+  QUERY_URL = WIKI_URL + str('api.php?action=query&'
+                             'list=allpages&aplimit=500&format=xml'
+                             '&apfilterredir=nonredirects')
   if continue_query:
     QUERY_URL = QUERY_URL + '&apfrom=' + urllib.quote(continue_query)
 
@@ -216,37 +281,110 @@ def getAllPages(resource_pages, continue_query=None):
   return resource_pages
 
 
-def syncResources(resource_pages):
+def syncResource(resource_page):
   """TODO."""
 
-  for resource_page in resource_pages:
-    logging.info('getResourceInfo')
-    logging.info(resource_page)
-    resource_info = getResourceInfo(resource_page)
-    decoded_url = resource_page.decode('utf-8')
+  logging.info('getResourceInfo')
+  logging.info(resource_page)
+  resource_info = getResourceInfo(resource_page)
+  decoded_url = resource_page.decode('utf-8')
 
-    resource = Resource().all().filter('wikiurl =', decoded_url).get()
-    if not resource:
-      resource = Resource()
-      resource.wikiurl = decoded_url
-    resource.name = resource_info['Name']
-  
-    if resource_info['Property Success'] == True:
-      resource.summary = resource_info['SummaryText']
-      resource.categories = resource_info['Categories']
-      resource.address = resource_info['Address']
-      resource.phone = resource_info['Phone_Number']
-      resource.email = resource_info['Email']
-      resource.website = resource_info['Website']
-      resource.contacts = resource_info['Contact-28s-29']
-      resource.hours = resource_info['Hours']
-      resource.languages = resource_info['Language-28s-29']
+  resource = Resource().all().filter('wikiurl =', decoded_url).get()
+  if not resource:
+    resource = Resource()
+    resource.wikiurl = decoded_url
+  resource.name = resource_info['Name'].decode('utf-8')
+  resource.categories = resource_info['Categories']
+  frontend_categories = []
+  for category in resource_info['Categories']:
+    frontend_category = FrontendCategories().all().filter('name =',
+                                                          category).get()
+    if frontend_category:
+      frontend_categories.append(category)
+  resource.frontend_categories = frontend_categories
+  address = resource_info['Address']
+  if resource.status != 'Excluded':
+    if resource.name and resource.frontend_categories and address:
+      if 'San Francisco' not in address:
+        address += ' San Francisco, CA'
+      resource.address = address.decode('utf-8')
       resource.status = 'Active'
     else:
       resource.status = 'Incomplete'
-    resource.last_updated = datetime.datetime.now()
-    resource.put()
-    time.sleep(.1)
+  if resource_info['Property Success'] == True:
+    if resource_info['SummaryText']:
+      resource.summary = resource_info['SummaryText'].decode('utf-8')
+    if resource_info['Phone_Number']:
+      resource.phone = resource_info['Phone_Number'].decode('utf-8')
+    if resource_info['Email']:
+      resource.email = resource_info['Email'].decode('utf-8')
+    if resource_info['Website']:
+      resource.website = resource_info['Website'].decode('utf-8')
+    if resource_info['Contact-28s-29']:
+      contacts = resource_info['Contact-28s-29'].replace('\n', '')
+      resource.contacts = contacts.decode('utf-8')
+    if resource_info['Hours']:
+      resource.hours = resource_info['Hours'].decode('utf-8')
+    if resource_info['Language-28s-29']:
+      languages = resource_info['Language-28s-29'].replace('\n', '')
+      resource.languages = languages.decode('utf-8')
+  resource.put()
+
+
+def updateFusionTableRow(wikiurl):
+  """TODO."""
+
+  user = RunningUser.all().get()
+  oauth_credentials = OAuthCredentials.all().filter('user = ', user.user).get()
+  tfmt = '%A, %d. %B %Y %I:%M%p'
+  oauth_client = ftclient.OAuthFTClient(oauth_credentials.consumer_key,
+                                        oauth_credentials.consumer_secret,
+                                        oauth_credentials.token,
+                                        oauth_credentials.secret)
+  decoded_url = wikiurl.decode('utf-8')
+  resource = Resource().all().filter('wikiurl =', decoded_url).get()
+  logging.info(resource.website)
+  logging.info(resource.name)
+  hours = resource.hours
+  if not resource.hours:
+    hours = str(resource.hours)
+  summary = resource.summary
+  if not resource.summary:
+    summary = str(resource.summary)
+  website = resource.website
+  if not resource.website:
+    website = str(resource.website)
+  phone = resource.phone
+  if not resource.phone:
+    phone = str(resource.phone)
+  email = resource.email
+  if not resource.email:
+    email = str(resource.email)
+  contacts = resource.contacts
+  if not resource.contacts:
+    contacts = str(resource.contacts)
+  language = resource.languages
+  if not resource.languages:
+    language = str(resource.languages)
+  categories = []
+  for category in resource.frontend_categories:
+    categories.append(category.encode('utf-8'))
+  row_info = {'ID': str(resource.key().id()),
+              'Name': resource.name.encode('utf-8'),
+              'Address': resource.address.encode('utf-8'),
+              'Categories': str(categories),
+              'Hours': hours.encode('utf-8'),
+              'Summary': summary.encode('utf-8'),
+              'Website': website.encode('utf-8'),
+              'Wiki URL': wikiurl,
+              'Phone': phone.encode('utf-8'),
+              'Email': email.encode('utf-8'),
+              'Contacts': contacts.encode('utf-8'),
+              'Languages': language.encode('utf-8'),
+              'Image URL': 'None',
+              'Last Updated': resource.last_updated.strftime(tfmt)}
+  logging.info(row_info)
+  response = oauth_client.query(SQL().insert(FUSION_TABLE_ID, row_info))
 
 
 class WikiSyncTaskHandler(webapp.RequestHandler):
@@ -255,9 +393,8 @@ class WikiSyncTaskHandler(webapp.RequestHandler):
   def post(self):
     """TODO."""
 
-    resource_list = []
-    resource_pages = getAllPages(resource_list)
-    syncResources(resource_pages)
+    resource_page = self.request.get('resource_page')
+    syncResource(resource_page.encode('utf-8'))
 
 
 class WikiSyncLauncher(webapp.RequestHandler):
@@ -266,8 +403,13 @@ class WikiSyncLauncher(webapp.RequestHandler):
   def get(self):
     """TODO."""
 
-    taskqueue.add(url='/task/wikisync')
-    self.response.out.write('Task launched.')
+    resource_list = []
+    resource_pages = getAllPages(resource_list)
+    num = 0
+    for page in resource_pages:
+      taskqueue.add(url='/task/wikisync', params={'resource_page': page})
+      num += 1
+    self.response.out.write(str(num) + ' tasks launched.')
 
 
 class FusionTablesCredentialsHandler(webapp.RequestHandler):
@@ -285,7 +427,7 @@ class FusionTablesCredentialsHandler(webapp.RequestHandler):
     consumer_key = oauth_credentials.consumer_key
     consumer_secret = oauth_credentials.consumer_secret
   
-    callback_url = 'http://localhost:8080/fusioncredentials?auth=1'
+    callback_url = 'http://project-open.appspot.com/fusioncredentials?auth=1'
     if not auth:
       url, token, secret = OAuth().generateAuthorizationURL(consumer_key,
                                                             consumer_secret,
@@ -307,46 +449,150 @@ class FusionTablesCredentialsHandler(webapp.RequestHandler):
 
 
 class FusionTablesSyncHandler(webapp.RequestHandler):
-  """Pushes information from datastore into FusionTables."""
+  """A task to update a FusionTables row for a given wiki page."""
+
+  def post(self):
+    """Retrieves the page to update and calls updateFusionTableRow on it."""
+
+    wikiurl = self.request.get('wikiurl')
+    updateFusionTableRow(wikiurl.encode('utf-8'))
+
+
+class FusionTablesSyncLauncher(webapp.RequestHandler):
+  """Initiates a complete sync of datastore to FusionTables."""
 
   def get(self):
-    """For each Active resource, creates a row in a Fusion Table."""
+    """For each Active resource, launches a FusionTablesSyncHandler task."""
 
-    user = users.get_current_user()
-    oauth_credentials = OAuthCredentials.all().filter('user = ', user).get()
+    user = RunningUser.all().get()
+    if not user:
+      user = RunningUser()
+      user.put()
+    oauth_credentials = OAuthCredentials.all().filter('user = ', user.user).get()
     if not oauth_credentials:
       self.redirect('/fusioncredentials')
     else:
-      tableid = 1293272
-      tfmt = '%A, %d. %B %Y %I:%M%p'
-      oauth_client = ftclient.OAuthFTClient(oauth_credentials.consumer_key,
-                                            oauth_credentials.consumer_secret,
-                                            oauth_credentials.token,
-                                            oauth_credentials.secret)
       resources = Resource().all().filter('status =', 'Active')
+      num = 0
       for resource in resources:
-        encoded_categories = []
-        for category in resource.categories:
-          encoded_categories.append(category.encode('utf-8'))
-        summary = 'None'
-        if resource.summary:
-          summary = resource.summary.encode('utf-8')
-        row_info = {'ID': str(resource.key().id()),
-                    'Name': resource.name.encode('utf-8'),
-                    'Wiki URL': str(resource.wikiurl),
-                    'Summary': summary,
-                    'Categories': str(encoded_categories),
-                    'Address': resource.address.encode('utf-8'),
-                    'Phone': str(resource.phone),
-                    'Email': str(resource.email),
-                    'Website': str(resource.website),
-                    'Contacts': str(resource.contacts),
-                    'Hours': str(resource.hours),
-                    'Languages': str(resource.languages),
-                    'Image URL': 'None',
-                    'Last Updated': resource.last_updated.strftime(tfmt)}
-        logging.info(row_info)
-        response = oauth_client.query(SQL().insert(tableid, row_info))
+        if resource.wikiurl:
+          wikiurl = resource.wikiurl.encode('utf-8')
+          taskqueue.add(url='/task/fusionsync', params={'wikiurl': wikiurl})
+          num += 1
+      self.response.out.write(str(num) + ' tasks launched.')
+
+
+class WikiStatusHandler(webapp.RequestHandler):
+  """A development page to display all synced resources."""
+
+  def get(self):
+    """Presents Active and Incomplete resources."""
+
+    start = quota.get_request_cpu_usage()
+    complete_resources = Resource().all().filter('status =', 'Active')
+    incomplete_resources = Resource().all().filter('status =', 'Incomplete')
+    excluded_resources = Resource().all().filter('status =', 'Excluded')
+    deleted_resources = Resource().all().filter('status =', 'Deleted')
+
+    template_values = {
+        'complete_resources': complete_resources,
+        'incomplete_resources': incomplete_resources,
+        'excluded_resources': excluded_resources,
+        'deleted_resources': deleted_resources,
+    }
+    end = quota.get_request_cpu_usage()
+    logging.info('get request cost %d megacycles.' % (end - start))
+    path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
+    self.response.out.write(template.render(path, template_values))
+
+  def post(self):
+    """Updates the Status of the selected resource."""
+
+    start = quota.get_request_cpu_usage()
+    wikiurl = self.request.get('wiki_url')
+    action = self.request.get('action')
+    if action == 'Update':
+      status = self.request.get('status')
+      resource = Resource().all().filter('wikiurl =', wikiurl).get()
+      resource.status = status
+      resource.put()
+    if action == 'WikiSync':
+      wikiurl_encoded = wikiurl.encode('utf-8')
+      syncResource(wikiurl_encoded)
+    if action == 'FusionSync':
+      wikiurl_encoded = wikiurl.encode('utf-8')
+      updateFusionTableRow(wikiurl_encoded)
+
+    end = quota.get_request_cpu_usage()
+    logging.info('post request cost %d megacycles.' % (end - start))
+    self.redirect('/wikistatus')
+
+
+class CategorySyncTaskHandler(webapp.RequestHandler):
+  """Traverses Resources to update FrontendCategories entities."""
+
+  def post(self):
+    """Assembles a list of categories and calls processCategory on each.
+
+    Goes through each Resource in the datastore to assemble a list of all
+    categories represented.  Then for each category in the list, calls
+    the processCategory method to determine if the category should go in
+    FrontendCategories.
+    """
+
+    resources = Resource().all()
+    all_categories = {}
+    for resource in resources:
+      for category in resource.categories:
+        if category not in all_categories:
+          all_categories[category] = 1
+        else:
+          all_categories[category] += 1
+    for category in all_categories:
+      processCategory(category)
+
+
+class CategorySyncLauncher(webapp.RequestHandler):
+  """TODO."""
+
+  def get(self):
+    """TODO."""
+
+    taskqueue.add(url='/task/category')
+    self.response.out.write('Task launched.')
+
+
+def processCategory(category):
+  """Determines if a provided category should go in FrontendCategories.
+
+  Queries the mediawiki API for information about the given
+  category.  If the category has parent categories, it goes through those
+  categories to see if its parent categories are within the
+  PARENT_CATEGORIES list.  If so, then this category is added to the
+  datastore as a FrontendCategories entity.
+  """
+
+  category_url = WIKI_URL + str('api.php?action=query&format=xml'
+                                '&prop=categories&titles=Category:' +
+                                urllib.quote(category, '%'))
+  http = httplib2.Http()
+  response, content = http.request(category_url, 'GET')
+  parents = parseString(content).getElementsByTagName('cl')
+  parent_category = ''
+  for parent in parents:
+    parent_value = parent.getAttribute('title')
+    if 'Category' in parent_value:
+      parent_category_name = parent_value.split(':')[1]
+      if parent_category_name in PARENT_CATEGORIES:
+        parent_category = parent_category_name
+  if parent_category:
+    frontend_category = FrontendCategories().all().filter('name =',
+                                                          category).get()
+    if not frontend_category:
+      frontend_category = FrontendCategories()
+      frontend_category.name = category
+      frontend_category.parent_category = parent_category
+      frontend_category.put()
 
 
 class MainHandler(webapp.RequestHandler):
@@ -364,73 +610,17 @@ class MainHandler(webapp.RequestHandler):
     self.response.out.write(template.render(path, template_values))
 
 
-class WikiStatusHandler(webapp.RequestHandler):
-  """A development page to display all synced resources."""
-
-  def get(self):
-    """Presents Active and Incomplete resources."""
-
-    complete_resources = Resource().all().filter('status =', 'Active')
-    incomplete_resources = Resource().all().filter('status =', 'Incomplete')
-    excluded_resources = Resource().all().filter('status =', 'Excluded')
-    deleted_resources = Resource().all().filter('status =', 'Deleted')
-
-    template_values = {
-        'complete_resources': complete_resources,
-        'complete_num': complete_resources.count(),
-        'incomplete_resources': incomplete_resources,
-        'incomplete_num': incomplete_resources.count(),
-        'excluded_resources': excluded_resources,
-        'excluded_num': excluded_resources.count(),
-        'deleted_resources': deleted_resources,
-        'deleted_num': deleted_resources.count()
-    }
-    path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
-    self.response.out.write(template.render(path, template_values))
-
-  def post(self):
-    """Updates the Status of the selected resource."""
-
-    wikiurl = self.request.get('wiki_url')
-    action = self.request.get('action')
-    if action == 'Update':
-      status = self.request.get('status')
-      resource = Resource().all().filter('wikiurl =', wikiurl).get()
-      resource.status = status
-      resource.put()
-    if action == 'Sync':
-      page_to_list = [wikiurl]
-      syncResources(page_to_list)
-
-    self.redirect('/wikistatus')
-
-
-class DirectionsHandler(webapp.RequestHandler):
-  """The directions page where a user can find directions to resources."""
-
-  def get(self):
-    """Retrieves origin and destination and passes them to the frontend."""
-
-    origin = self.request.get('origin')
-    destination = self.request.get('destination')
-
-    template_values = {
-      'origin': origin,
-      'destination': destination,
-    }    
-    path = os.path.join(os.path.dirname(__file__), 'directions.html')
-    self.response.out.write(template.render(path, template_values))
-
-
 def main():
     application = webapp.WSGIApplication(
         [('/', MainHandler),
-         ('/wikistatus', WikiStatusHandler),
-         ('/wikisync', WikiSyncLauncher),
-         ('/directions', DirectionsHandler),
-         ('/fusioncredentials', FusionTablesCredentialsHandler),
-         ('/fusionsync', FusionTablesSyncHandler),
-         ('/task/wikisync', WikiSyncTaskHandler)],
+         ('/wikistatus', WikiStatusHandler),  #TODO(dbow): make admin-only.
+         ('/category', CategorySyncLauncher),  #admin-only.
+         ('/task/category', CategorySyncTaskHandler), #admin-only.
+         ('/wikisync', WikiSyncLauncher),  #admin-only.
+         ('/task/wikisync', WikiSyncTaskHandler),  #admin-only.
+         ('/fusioncredentials', FusionTablesCredentialsHandler),  #admin-only.
+         ('/fusionsync', FusionTablesSyncLauncher),  #admin-only.
+         ('/task/fusionsync', FusionTablesSyncHandler)],  #admin-only.
         debug=True)
     util.run_wsgi_app(application)
 

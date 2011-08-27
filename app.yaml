@@ -1,12 +1,13 @@
 application: project-open
-version: 1
+version: 2
 runtime: python
 api_version: 1
 
 handlers:
-- url: /googlecf422d98732d787d.html
-  static_files: static/googlecf422d98732d787d.html
-  upload: static/googlecf422d98732d787d.html
+
+- url: /favicon\.ico
+  static_files: static/img/favicon.ico
+  upload: static/img/favicon.ico
 
 - url: /static
   static_dir: static
@@ -16,6 +17,14 @@ handlers:
   login: admin
 
 - url: /wikisync.*
+  script: main.py
+  login: admin
+
+- url: /fusion.*
+  script: main.py
+  login: admin
+
+- url: /category.*
   script: main.py
   login: admin
 
