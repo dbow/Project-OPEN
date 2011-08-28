@@ -92,7 +92,11 @@ function createMap(){
   });
   layer.setMap(map);
 
-    //add a click listener to the layer
+    // add a click listener to the layer, so we can customize the info window
+    // when it's displayed.
+    // TODO(atm): Make this look good.
+    // TODO(atm): Large summaries can overrun the height of the info window. We
+    // need to adjust the size of the window to suit.
     google.maps.event.addListener(layer, 'click', function(e) {
       //update the content of the InfoWindow
       e.infoWindowHtml = '<div style="color:#e4542e; font-size:18pt">' + e.row['Name'].value + '</div>';
