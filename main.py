@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+import csv
 import os
 from google.appengine.dist import use_library
 use_library('django', '1.2')
@@ -50,6 +51,9 @@ PARENT_CATEGORIES = ['Employment',
                      'Other']
 
 FUSION_TABLE_ID = 1293272
+
+GEOCODE_URL = str('http://maps.google.com/maps/api/geocode/xml?'
+                  'sensor=false&address=')
 
 IMAGE_MAX_WIDTH = 160
 IMAGE_MAX_HEIGHT = 120
@@ -111,6 +115,7 @@ class Resource(db.Model):
   categories = db.StringListProperty(default=None)
   frontend_categories = db.StringListProperty(default=None)
   address = db.PostalAddressProperty()
+  geocoded_address = db.GeoPtProperty(default=None)
   phone = db.PhoneNumberProperty(default=None)
   email = db.EmailProperty(default=None)
   website = db.LinkProperty(default=None)
@@ -368,6 +373,18 @@ def syncResource(resource_page):
       if 'San Francisco' not in address:
         address += ' San Francisco, CA'
       resource.address = address.decode('utf-8')
+      geo_url = GEOCODE_URL + urllib.quote(resource.address.encode('utf-8'))
+      http = httplib2.Http()
+      response, content = http.request(geo_url, 'GET')
+      response_xml = parseString(content)
+      status = response_xml.getElementsByTagName('status')[0].childNodes[0]
+      logging.info('geocoding status: ' + status.data)
+      if status.data == 'OK':
+        lat_element = response_xml.getElementsByTagName('lat')[0]
+        lng_element = response_xml.getElementsByTagName('lng')[0]
+        lat = lat_element.childNodes[0].data
+        lng = lng_element.childNodes[0].data
+        resource.geocoded_address = db.GeoPt(float(lat), float(lng))
       resource.status = 'Active'
     else:
       resource.status = 'Incomplete'
@@ -389,6 +406,7 @@ def syncResource(resource_page):
       languages = resource_info['Language-28s-29'].replace('\n', '')
       resource.languages = languages.decode('utf-8')
   image_data = getResourceImage(resource_page)
+  image_data = False
   if image_data:
     image = images.Image(str(image_data))
     image.resize(width=160, height=120)
@@ -447,9 +465,10 @@ def updateFusionTableRow(wikiurl):
   image = 'False'
   if resource.image:
     image = 'True'
-  row_info = {'ID': str(resource.key().id()),
-              'Name': resource.name.encode('utf-8'),
+  row_id = resource.key().id()
+  row_info = {'Name': resource.name.encode('utf-8'),
               'Address': resource.address.encode('utf-8'),
+              'GeocodedAddress': str(resource.geocoded_address),
               'Categories': ', '.join(categories),
               'DisplayFilter': str(display_filter),
               'FilterCategories': ', '.join(filter_categories),
@@ -463,8 +482,27 @@ def updateFusionTableRow(wikiurl):
               'Languages': language.encode('utf-8'),
               'Image': image,
               'Last Updated': resource.last_updated.strftime(tfmt)}
-  logging.info(row_info)
-  response = oauth_client.query(SQL().insert(FUSION_TABLE_ID, row_info))
+  row_query = "'Wiki URL' = '" + wikiurl + "'"
+  response = oauth_client.query(SQL().select(FUSION_TABLE_ID,
+                                             ['ROWID','Name','ID'],
+                                             row_query))
+  split_response = response.split('\n')
+  logging.info(split_response)
+  if len(split_response) < 3 and split_response[1] == '':
+    logging.info('insert')
+    row_info['ID'] = str(row_id)
+    insert = oauth_client.query(SQL().insert(FUSION_TABLE_ID, row_info))
+    logging.info(insert)
+
+  else:
+    logging.info('update')
+    fusion_row_id = int(split_response[1].split(',')[0])
+    update = oauth_client.query(SQL().update(FUSION_TABLE_ID,
+                                             row_info.keys(),
+                                             row_info.values(),
+                                             fusion_row_id))
+    if update != 'OK':
+      raise EnvironmentError(update)
 
 
 class WikiSyncTaskHandler(webapp.RequestHandler):
@@ -551,7 +589,7 @@ class FusionTablesSyncLauncher(webapp.RequestHandler):
     oauth_credentials = OAuthCredentials.all().filter('user = ', user.user).get()
     if not oauth_credentials:
       self.redirect('/fusioncredentials')
-    else:
+    else:     
       resources = Resource().all().filter('status =', 'Active')
       num = 0
       for resource in resources:

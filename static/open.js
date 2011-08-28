@@ -7,10 +7,10 @@ var OP = {};
 OP.SITE_ROOT = 'http://project-open.appspot.com';
 
 var map;
-var initial_bounds;
+var initialBounds;
 var sf;
 var FUSION_ID = 1293272;
-var WIKI_URL = 'sfhomeless.wikia.com/wiki/';
+var WIKI_URL = 'http://sfhomeless.wikia.com/wiki/';
 var parentCategories = [];
 
 function changeData(update_map) {
@@ -34,9 +34,7 @@ function changeData(update_map) {
   	jsonp: 'jsonCallback',
   	success: OP.Data.receive
   });
-  
-  //var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-  //query.send(OP.Data.receive);
+
 }
 
 function getCategoryList() {
@@ -69,13 +67,39 @@ function createMap(){
       from: FUSION_ID
     },
     styles: [{
-      markerOptions: {
-        iconName: "small_yellow"
-      }
-    }, {
-      where: "'Filter Category' = 'Housing'",
+      where: "'DisplayFilter' = 'Employment'",
       markerOptions: {
         iconName: "small_blue"
+      }
+    }, {
+      where: "'DisplayFilter' = 'Government'",
+      markerOptions: {
+        iconName: "small_purple"
+      }
+    }, {
+      where: "'DisplayFilter' = 'Housing'",
+      markerOptions: {
+        iconName: "measle_brown"
+      }
+    }, {
+      where: "'DisplayFilter' = 'Legal'",
+      markerOptions: {
+        iconName: "small_green"
+      }
+    }, {
+      where: "'DisplayFilter' = 'Medical'",
+      markerOptions: {
+        iconName: "small_red"
+      }
+    }, {
+      where: "'DisplayFilter' = 'Special Groups'",
+      markerOptions: {
+        iconName: "measle_white"
+      }
+    }, {
+      where: "'DisplayFilter' = 'Other'",
+      markerOptions: {
+        iconName: "small_yellow"
       }
     }]
   });
@@ -83,21 +107,17 @@ function createMap(){
 
     // add a click listener to the layer, so we can customize the info window
     // when it's displayed.
-    // TODO(atm): Make this look good.
-    // TODO(atm): Large summaries can overrun the height of the info window. We
-    // need to adjust the size of the window to suit.
     google.maps.event.addListener(layer, 'click', function(e) {
       //update the content of the InfoWindow
-      e.infoWindowHtml = '<div style="color:#e4542e; font-size:18pt">' + e.row['Name'].value + '</div>';
-      if (e.row['Summary'].value != 'None') {
-        e.infoWindowHtml += '<div style="font-style:italic; font-size:12pt">';
-        e.infoWindowHtml += e.row['Summary'].value;
-        e.infoWindowHtml += '</div>';
+      e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' + e.row['Name'].value + '</div>';
+      if (e.row['Categories'].value != 'None') {
+        e.infoWindowHtml += '<div class="table-services">' +
+                             e.row['Categories'].value + '</br></div>';
       }
       if (e.row['Address'].value != 'None' ||
           e.row['Phone'].value != 'None' ||
           e.row['Hours'].value != 'None') {
-        e.infoWindowHtml += '<div style="font-style:italic; font-size:12pt">';
+        e.infoWindowHtml += '<div class="table-address">';
         if (e.row['Address'].value != 'None') {
           e.infoWindowHtml += e.row['Address'].value + '</br>';
         }
@@ -117,8 +137,8 @@ function createMap(){
   google.maps.event.addListener(map, 'bounds_changed', function() {
       changeData(true);
 
-  if(!initial_bounds) {
-    initial_bounds = map.getBounds();
+  if(!initialBounds) {
+    initialBounds = map.getBounds();
   }
 
   });
@@ -147,7 +167,7 @@ function updateMap(location) {
     geocoder = new google.maps.Geocoder();
 
     geocoder.geocode( { 'address': location,
-                        'bounds': initial_bounds,
+                        'bounds': initialBounds,
                         'region': 'US',
                         }, function(results, status) {
       if (status == google.maps.GeocoderStatus.OK) {
@@ -320,7 +340,6 @@ OP.Data = (function () {
             }
           }
         	if (!cats || inCategory) {
-        	  console.log(filteredCats);
         		_filtered.push(rows[i]);
             //console.log('looking at address: ' + rows[i][3]);
             //geocoder.geocode(
