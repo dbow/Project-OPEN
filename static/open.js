@@ -77,8 +77,55 @@ function createMap(){
     scrollwheel: false
   });
 
-  layer = new google.maps.FusionTablesLayer(FUSION_ID);
+  layer = new google.maps.FusionTablesLayer({
+    query: {
+      select: 'Address',
+      from: FUSION_ID
+    },
+    styles: [{
+      markerOptions: {
+        iconName: "small_yellow"
+      }
+    }, {
+      where: "'Filter Category' = 'Housing'",
+      markerOptions: {
+        iconName: "small_blue"
+      }
+    }]
+  });
   layer.setMap(map);
+
+    // add a click listener to the layer, so we can customize the info window
+    // when it's displayed.
+    // TODO(atm): Make this look good.
+    // TODO(atm): Large summaries can overrun the height of the info window. We
+    // need to adjust the size of the window to suit.
+    google.maps.event.addListener(layer, 'click', function(e) {
+      //update the content of the InfoWindow
+      e.infoWindowHtml = '<div style="color:#e4542e; font-size:18pt">' + e.row['Name'].value + '</div>';
+      if (e.row['Summary'].value != 'None') {
+        e.infoWindowHtml += '<div style="font-style:italic; font-size:12pt">';
+        e.infoWindowHtml += e.row['Summary'].value;
+        e.infoWindowHtml += '</div>';
+      }
+      if (e.row['Address'].value != 'None' ||
+          e.row['Phone'].value != 'None' ||
+          e.row['Hours'].value != 'None') {
+        e.infoWindowHtml += '<div style="font-style:italic; font-size:12pt">';
+        if (e.row['Address'].value != 'None') {
+          e.infoWindowHtml += e.row['Address'].value + '</br>';
+        }
+        if (e.row['Phone'].value != 'None') {
+          e.infoWindowHtml += e.row['Phone'].value + '</br>';
+        }
+        if (e.row['Hours'].value != 'None') {
+          e.infoWindowHtml += e.row['Hours'].value;
+        }
+        e.infoWindowHtml += '</div>';
+      }
+    });
+
+
   setHeights();
 
   google.maps.event.addListener(map, 'bounds_changed', function() {
