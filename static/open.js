@@ -4,6 +4,8 @@ var OP = {};
 
 (function () {
 
+OP.SITE_ROOT = 'http://project-open.appspot.com';
+
 var map;
 var initial_bounds;
 var sf;
@@ -442,7 +444,7 @@ OP.MyGuide = (function () {
 	};
 	
 	me.url = function (hash) {
-		return 'http://localhost:8082/map?id=' + hash
+		return OP.SITE_ROOT + '/map?id=' + hash
 	};
 	
 	me.link2 = function (hash) {
