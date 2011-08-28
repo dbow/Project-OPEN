@@ -21,6 +21,7 @@ use_library('django', '1.2')
 import logging
 import hashlib
 import httplib2
+import pickle
 import time
 import urllib
 from xml.dom.minidom import parseString
@@ -32,6 +33,7 @@ from google.appengine.ext import webapp, db
 from google.appengine.ext.webapp import util, template
 from google.appengine.api import images
 from google.appengine.api import taskqueue
+from google.appengine.api import memcache
 from google.appengine.api import users
 from google.appengine.api import quota
 
@@ -49,6 +51,24 @@ FUSION_TABLE_ID = 1293272
 
 IMAGE_MAX_WIDTH = 160
 IMAGE_MAX_HEIGHT = 120
+
+
+class DictProperty(db.Property):
+  """Allows a dictionary to be stored in datastore."""
+
+  data_type = db.Blob
+
+  # Disables "Invalid method name" warning
+  # pylint: disable-msg=C6409
+  def get_value_for_datastore(self, model_instance):
+    value = getattr(model_instance, self.name)
+    pickled_val = pickle.dumps(value)
+    if value is not None:
+      return db.Blob(pickled_val)
+
+  def make_value_from_datastore(self, value):
+    if value is not None:
+      return pickle.loads(str(value))
 
 
 class Resource(db.Model):
@@ -120,6 +140,20 @@ class FrontendCategories(db.Model):
 
   name = db.StringProperty()
   parent_category = db.StringProperty(choices=PARENT_CATEGORIES)
+
+
+class ParentCategories(db.Model):
+  """TODO."""
+
+  name = db.StringProperty()
+  image = db.BlobProperty(default=None)
+
+
+class CategoryMaps(db.Model):
+  """TODO."""
+
+  category_map = DictProperty(default=None)
+  child_category_map = DictProperty(default=None)
 
 
 class SavedMap(db.Model):
@@ -395,16 +429,28 @@ def updateFusionTableRow(wikiurl):
   language = resource.languages
   if not resource.languages:
     language = str(resource.languages)
+  category_maps = retrieveCategoryMapping()
+  category_map = category_maps[0]
+  child_category_map = category_maps[1]
+  display_filter = ''
   categories = []
+  filter_categories = []
   for category in resource.frontend_categories:
     categories.append(category.encode('utf-8'))
+    parent_category = child_category_map[category]
+    if not display_filter:
+      display_filter = parent_category
+    if parent_category not in filter_categories:
+      filter_categories.append(parent_category)
   image = 'False'
   if resource.image:
     image = 'True'
   row_info = {'ID': str(resource.key().id()),
               'Name': resource.name.encode('utf-8'),
               'Address': resource.address.encode('utf-8'),
-              'Categories': str(categories),
+              'Categories': ', '.join(categories),
+              'DisplayFilter': str(display_filter),
+              'FilterCategories': ', '.join(filter_categories),
               'Hours': hours.encode('utf-8'),
               'Summary': summary.encode('utf-8'),
               'Website': website.encode('utf-8'),
@@ -560,6 +606,49 @@ class WikiStatusHandler(webapp.RequestHandler):
     self.redirect('/wikistatus')
 
 
+class CategoryImageUploader(webapp.RequestHandler):
+  """TODO."""
+  
+  def get(self):
+    """TODO."""
+
+    category_selects = ''
+    for category in PARENT_CATEGORIES:
+      category_selects += str('<option value="' +
+                              category +
+                              '">' +
+                              category +
+                              '</option>')      
+      
+    self.response.out.write("""
+          <form action="/categoryimage" enctype="multipart/form-data" method="post">
+            <div><label>Category:</label></div>
+            <div><select name="category">""" + category_selects +
+            """"</select></div>
+            <div><label>Image:</label></div>
+            <div><input type="file" name="img"/></div>
+            <div><input type="submit" value="Upload" /></div>
+          </form>
+        </body>
+      </html>""")
+
+  def post(self):
+    """TODO."""
+
+    image_data = self.request.get('img')
+    category = self.request.get('category')
+    if image_data and category:
+      parent_categories = ParentCategories().all()
+      parent_category = parent_categories.filter('name =', category).get()
+      if not parent_category:
+        parent_category = ParentCategories(name=category)
+      image = images.Image(image_data)
+      image.resize(width=160, height=120)
+      resized_image = image.execute_transforms()
+      parent_category.image = db.Blob(resized_image)
+      parent_category.put()
+
+
 class CategorySyncTaskHandler(webapp.RequestHandler):
   """Traverses Resources to update FrontendCategories entities."""
 
@@ -627,6 +716,44 @@ def processCategory(category):
       frontend_category.put()
 
 
+def retrieveCategoryMapping():
+  """TODO."""
+
+  category_maps = CategoryMaps.all().get()
+  if not category_maps:
+    setCategoryMapping()
+
+  return category_maps.category_map, category_maps.child_category_map
+
+
+def setCategoryMapping():
+  """TODO."""
+
+  category_map = {}
+  for parent in PARENT_CATEGORIES:
+    category_map[parent] = []
+
+  all_categories = FrontendCategories().all()
+  for category in all_categories:
+    parent_list = category_map[category.parent_category]
+    parent_list.append(category.name.encode('utf-8'))
+
+  category_maps = CategoryMaps.all().get()
+  if not category_maps:
+    category_maps = CategoryMaps()
+
+  category_maps.category_map = category_map
+
+  child_category_map = {}
+  for parent in category_map:
+      for child in category_map[parent]:
+        child_category_map[child] = parent
+
+  category_maps.child_category_map = child_category_map
+
+  category_maps.put()
+  
+
 class MainHandler(webapp.RequestHandler):
   """The main site page providing a frontend to browse the resources."""
 
@@ -634,9 +761,11 @@ class MainHandler(webapp.RequestHandler):
     """Retrieves resources and passes them to the frontend."""
 
     resources = Resource().all().filter('status =', 'Active')
+    category_map = retrieveCategoryMapping()
 
     template_values = {
-        'resources': resources
+        'resources': resources,
+        'category_map': category_map,
     }
     path = os.path.join(os.path.dirname(__file__), 'index.html')
     self.response.out.write(template.render(path, template_values))
@@ -648,15 +777,23 @@ class GetImage(webapp.RequestHandler):
     """TODO."""
 
     wikiurl = self.request.get('wikiurl')
-    resource = Resource().all().filter('wikiurl =', wikiurl).get()
-    if (resource and resource.image):
-      self.response.headers['Content-Type'] = 'image/jpeg'
-      self.response.out.write(resource.image)
+    filter_name = self.request.get('filter')
+    if wikiurl:
+      resource = Resource().all().filter('wikiurl =', wikiurl).get()
+      if resource and resource.image:
+        self.response.headers['Content-Type'] = 'image/jpeg'
+        self.response.out.write(resource.image)
+    elif filter_name:
+      parent_categories = ParentCategories().all()
+      parent_category = parent_categories.filter('name =', filter_name).get()
+      if parent_category:
+        self.response.headers['Content-Type'] = 'image/jpeg'
+        self.response.out.write(parent_category.image)
     else:
       self.response.out.write(None)
 
 
-class SaveMapHandler(webapp.RequestHandler):
+class SaveHandler(webapp.RequestHandler):
   """TODO."""
 
   def get(self):
@@ -670,14 +807,33 @@ class SaveMapHandler(webapp.RequestHandler):
       saved_map.resources = id_list
       saved_map.put()
 
+    return hashed_ids
+
+
+class SavedMapHandler(webapp.RequestHandler):
+  """TODO."""
+
+  def get(self):
+    """TODO."""
+
+    hashed_id = self.request.get('id')
+    saved_map = SavedMap().all().filter('url =', hashed_ids).get()
+    template_values = {
+        'saved_map': saved_map,
+    }
+    path = os.path.join(os.path.dirname(__file__), 'map.html')
+    self.response.out.write(template.render(path, template_values))
+
 
 def main():
     application = webapp.WSGIApplication(
         [('/', MainHandler),
          ('/image', GetImage),
-         ('/save', SaveMapHandler),
+         ('/save', SaveHandler),
+         ('/map', SavedMapHandler),
          ('/wikistatus', WikiStatusHandler),  #TODO(dbow): make admin-only.
          ('/category', CategorySyncLauncher),  #admin-only.
+         ('/categoryimage', CategoryImageUploader), #admin-only.
          ('/task/category', CategorySyncTaskHandler), #admin-only.
          ('/wikisync', WikiSyncLauncher),  #admin-only.
          ('/task/wikisync', WikiSyncTaskHandler),  #admin-only.

@@ -9,6 +9,7 @@ var initial_bounds;
 var sf;
 var FUSION_ID = 1293272;
 var WIKI_URL = 'sfhomeless.wikia.com/wiki/';
+var parentCategories = [];
 
 function changeData(update_map) {
   var whereClause = "";
@@ -22,7 +23,7 @@ function changeData(update_map) {
     }
   }
   
-  var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL' FROM " + FUSION_ID + whereClause;
+  var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + FUSION_ID + whereClause;
   
   $.ajax({
   	url: 'http://www.google.com/fusiontables/api/query',
@@ -37,32 +38,17 @@ function changeData(update_map) {
 }
 
 function getCategoryList() {
-  var queryText = encodeURIComponent("SELECT 'Categories' FROM " + FUSION_ID);
-  var query = new google.visualization.Query('http://www.google.com/fusiontables/gvizdata?tq='  + queryText);
-  query.send(parseList);
+  for(var prop in categoryMapping) {
+    parentCategories.push(prop);
+  }
+  var categoryList = [];
+  for(i=0; i < parentCategories.length; i++) {
+    list_item = {'cat': parentCategories[i]};
+    categoryList.push(list_item);
+  }
+  OP.Cats.populate(categoryList);
 }
 
-function parseList(response) {
-  category_list = [];
-  numRows = response.getDataTable().getNumberOfRows();
-  for(i = 0; i < numRows; i++) {
-    new_category = response.getDataTable().getValue(i, 0);
-    category_array = new_category.replace('[','').replace(']','').split(',');
-    catLength = category_array.length;
-    for (y = 0; y < catLength; y++) {
-      var category = category_array[y].replace(/'/g,"");
-      if(category_list.indexOf(category) < 0) {
-        category_list.push(category);
-      }
-    }
-  }
-  final_list = [];
-  for(i = 0; i < category_list.length; i++) {
-      list_item = {'cat': category_list[i]};
-      final_list.push(list_item);     
-  }
-  OP.Cats.populate(final_list);
-}
 
 function createMap(){
 
@@ -247,13 +233,11 @@ OP.Data = (function () {
     		i, j,
     		search = $("#search-box");
     		
-    	console.log(cats);
-    		
     	_filtered = [];
     
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
-        		catsKeyed[cats[i]] = 1;
+        	  catsKeyed[cats[i]] = 1;
         	}
         }
         else {
@@ -277,7 +261,16 @@ OP.Data = (function () {
               continue;
             }
           }
-        	if (!cats || catsKeyed[rows[i][1]]) {
+          var inCategory = false;
+          var filteredCats = rows[i][9].split(', ');
+          var filteredLen = filteredCats.length;
+          for (i = 0; i < filteredLen; i++) {
+            if(catsKeyed[filteredCats[i]]) {
+              inCategory = true;
+            }
+          }
+        	if (!cats || inCategory) {
+        	  console.log(filteredCats);
         		_filtered.push(rows[i]);
             //console.log('looking at address: ' + rows[i][3]);
             //geocoder.geocode(
@@ -290,7 +283,7 @@ OP.Data = (function () {
             //        console.log("Address not found: " + rows[i][3]);
             //      }
             //    });
-            var catValues = rows[i][4].replace('[','').replace(']','').replace(/'/g,'')
+            var catValues = rows[i][4]
             var websiteContent = '';
             if (rows[i][2] != 'None') {
               websiteContent = '<div class="cell table-link"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][2] + '</a></div>';
@@ -303,7 +296,7 @@ OP.Data = (function () {
 	        		'</div>';
               showMoreInfo = '<div class="table-toggle">More Information</div>';
             }
-            var imageInfo = '<img class="table-img" />';
+            var imageInfo = '<img class="table-img" src="/image?filter=' + rows[i][8] + '"/>';
             if (rows[i][6] == 'True') {
               imageInfo = '<img class="table-img" src="/image?wikiurl=' + rows[i][7] + '" />';
             }
