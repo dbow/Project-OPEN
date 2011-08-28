@@ -71,7 +71,8 @@ function createMap(){
   map = new google.maps.Map(document.getElementById('map'), {
     center: sf,
     zoom: 12,
-    mapTypeId: 'roadmap'
+    mapTypeId: 'roadmap',
+    scrollwheel: false
   });
 
   layer = new google.maps.FusionTablesLayer(FUSION_ID);
@@ -330,7 +331,7 @@ OP.Data = (function () {
 */
 	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
 	        	'</div>'
-	        	).data('id', i).appendTo(table);
+	        	).data('id', rows[i][1]).appendTo(table);
         	}
         }
         
@@ -348,11 +349,11 @@ OP.Data = (function () {
     		img = new Image(),
     		params,
     		markers = [];
+    		
+    	console.log('hi');
 
-		doc.write('<html><head><title>Print</title></head><body></body></html>');
-		$("#map .gmnoprint").hide();
-		doc.body.innerHTML = '<div style="position: relative; height: 250px; width: 760px;">' + $("#map").html() + '</div>' + $("#table").html();
-		$("#map .gmnoprint").show();
+		doc.write('<html><head><title>Print<link type="text/css" rel="stylesheet" href="/static/global.css" /><link type="text/css" rel="stylesheet" href="/static/map.css" /></title></head><body></body></html>');
+		doc.body.innerHTML = '<div style="position: relative; height: 1250px; width: 1000px;">' + $("#map").html() + '</div><div class="resources">' + $(".resources").html() + '</div>';
 		
 		//not doing static maps
 		/*
@@ -441,19 +442,26 @@ OP.MyGuide = (function () {
 	};
 	
 	me.url = function (hash) {
-		return 'http://project-open.appspot.com/maps/' + hash
+		return 'http://localhost:8082/map?id=' + hash
 	};
 	
-	function _link(hash) {
+	me.link2 = function (hash) {
 		alert(me.url(hash));
 	}
 	me.link = function () {
-		me.save(_link);
+		me.save(me.link2);
 	};
 	
+	me.email2 = function (hash) {
+		window.location = 'mailto:?subject=projectOPEN Map&body=' + me.url(hash);
+	};
 	me.email = function () {
+		me.save(me.email2);
+	};
+	
+	me.print = function () {
 		me.save(function (hash) {
-			window.location = 'mailto:?subject=projectOPEN Map&body=' + me.url(hash);
+			window.open(me.url(hash));
 		});
 	};
 	
@@ -464,6 +472,85 @@ OP.MyGuide = (function () {
         
         $('.rail-option-link').click(me.link);
         $('.rail-option-email').click(me.email);
+        $('.rail-option-print').click(me.print);
+	};
+	
+	return me;
+}());
+
+OP.Map = (function () {
+	var me = {},
+		_hash;
+	
+	me.print = function () {
+		$('body').addClass('print');
+		window.print();
+		$('body').removeClass('print');
+	};
+	
+	me.email = function () {
+		OP.MyGuide.email2(_hash);
+	};
+	
+	me.link = function () {
+		OP.MyGuide.link2(_hash);
+	};
+	
+	me.createNew = function () {
+		var sf = new google.maps.LatLng(37.77493,-122.419416);
+
+		map = new google.maps.Map(document.getElementById('map'), {
+			center: sf,
+			zoom: 12,
+			mapTypeId: 'roadmap',
+			scrollwheel: false
+		});
+		
+		layer = new google.maps.FusionTablesLayer(FUSION_ID);
+		layer.setMap(map);
+		setHeights();
+		
+		google.maps.event.addListener(map, 'bounds_changed', function() {
+			changeData(true);
+		
+			if(!initial_bounds) {
+				initial_bounds = map.getBounds();
+			}
+		
+		});
+	};
+	
+	me.createStatic = function (data) {
+		_hash = data.url;
+	
+		var sf = new google.maps.LatLng(37.77493,-122.419416);
+
+		var map = new google.maps.Map(document.getElementById('map'), {
+				center: sf,
+				zoom: 13,
+				disableDefaultUI: true,
+				draggable: false,
+				mapTypeId: 'roadmap',
+				scrollwheel: false
+			}),
+			
+			ids = data.ids.join(',');	
+		
+		layer = new google.maps.FusionTablesLayer({
+			query: {
+				select: 'Address',
+				from: FUSION_ID,
+				where: 'ID IN (' + ids + ')'
+			}
+		});
+		
+		layer.setMap(map);
+	};
+	
+	me.setUp = function () {
+		$('.header-sub-option-print').click(me.print);
+		$('.header-sub-option-link').click(me.link);
+		$('.header-sub-option-email').click(me.email);
 	};
 	
 	return me;
@@ -586,10 +673,16 @@ OP.Util = (function () {
 }());
 
 $(function () {
-	OP.Util.setUp();
-    createMap();
-    getCategoryList();
-    setHeights();
+	if (location.pathname === '/map') {
+		console.log('hi');
+		OP.Map.setUp();
+	}
+	else {
+		OP.Util.setUp();
+	    createMap();
+	    getCategoryList();
+	    setHeights();
+    }
 });
 
 }());

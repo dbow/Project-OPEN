@@ -676,6 +676,49 @@ class SaveMapHandler(webapp.RequestHandler):
       
     #self.response.headers.add_header('content-type', 'text/json')
     self.response.out.write(simplejson.dumps(hashed_ids))
+    
+class SavedMapHandler(webapp.RequestHandler):
+ """TODO."""
+
+ def get(self):
+   """TODO."""
+
+   hashed_id = self.request.get('id')
+   saved_map = SavedMap().all().filter('url =', hashed_id).get()
+   
+   resources = {}
+   ids = saved_map.resources
+   #ids = [12, 13] #TODO: get rid of dummy data
+   
+   properties = Resource().properties()
+   
+   logging.info('kyle')
+   logging.info(properties)
+   
+   for resourceId in ids:
+       resource = Resource().get_by_id(int(resourceId));
+       resources[resourceId] = {
+           'name': resource.name,
+           'url': resource.wikiurl,
+           'categories': resource.categories,
+           'address': resource.address,
+           'phone': resource.phone,
+           'hours': resource.hours,
+           'website': resource.website,
+       }
+   
+   template_values = {
+       'json': simplejson.dumps({
+           'ids': ids,
+           'resources': resources,
+           'name': saved_map.name,
+           'url': saved_map.url,
+       }),
+       'resources': resources,
+       'ids': ids,
+   }
+   path = os.path.join(os.path.dirname(__file__), 'map.html')
+   self.response.out.write(template.render(path, template_values))
 
 
 def main():
@@ -683,6 +726,7 @@ def main():
         [('/', MainHandler),
          ('/image', GetImage),
          ('/save', SaveMapHandler),
+         ('/map', SavedMapHandler),
          ('/wikistatus', WikiStatusHandler),  #TODO(dbow): make admin-only.
          ('/category', CategorySyncLauncher),  #admin-only.
          ('/task/category', CategorySyncTaskHandler), #admin-only.

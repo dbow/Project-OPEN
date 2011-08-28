@@ -1,0 +1,66 @@
+<!doctype html>
+<html xmlns:v="urn:schemas-microsoft-com:vml">
+	<head>
+		<title>Project OPEN San Francisco</title>
+		<link type="text/css" rel="stylesheet" href="/static/global.css" />
+		<link type="text/css" rel="stylesheet" href="/static/map.css" />
+		
+		
+		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+		<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+		<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
+		<script type="text/javascript" src="http://crypto-js.googlecode.com/files/2.3.0-crypto-sha1.js"></script>
+		<script type="text/javascript" src="/static/open.js"></script>
+		<script type="text/javascript">
+			{% autoescape off %}
+				$(function () {
+					OP.Map.createStatic({{json}});
+				});
+			{% endautoescape %}
+		</script>
+	</head>
+	<body>
+		<div id="header" class="clearfix">
+			<h1><img alt="projectOPEN" /></h1>
+			<ul id="nav" class="DIN-bold">
+				<li><a onclick="window.close();">Go Back</a></li>
+			</ul>
+		</div>
+		
+		<div id="header-sub">
+			<div class="header-sub-inner clearfix">
+				<div class="header-sub-title">
+					<div class="header-sub-title-name DIN-reg">Stuff Fun Times</div>
+					<div class="header-sub-title-info">Category 1, Category 2</div>
+				</div>
+				<div class="header-sub-options">
+					<div class="header-sub-option header-sub-option-link"><img src="static/img/permalink.png" /></div>
+					<div class="header-sub-option header-sub-option-email"><img src="static/img/email.png" /></div>
+					<div class="header-sub-option"><img src="static/img/download.png" /></div>
+					<div class="header-sub-option header-sub-option-print last"><img src="static/img/print.png" /></div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="page" class="page clearfix">
+			<div id="map"></div>
+			
+			<div class="resources">
+				{% for id, resource in resources.items %}
+					<div class="resource">
+						{% for prop, val in resource.items %}
+							{% if val %}
+								{% if prop == 'categories' %}
+									<div class="resource-prop-{{prop}}">{{ val|join:', ' }}</div>
+								{% else %}
+									<div class="resource-prop-{{prop}}">{{val}}</div>
+								{% endif %}
+							{% endif %}
+						{% endfor %}
+					</div>
+				{% endfor %}
+			</div>
+		</div>
+	</body>
+</html>
