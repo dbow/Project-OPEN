@@ -1,0 +1,109 @@
+/* reset */
+html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,form,fieldset,legend,input,textarea,p,blockquote,th,td{margin:0;padding:0;}table{border-collapse:collapse;border-spacing:0;}fieldset,img{border:0;}address,caption,cite,code,dfn,em,strong,th,var{font-style:normal;font-weight:normal;}li{list-style:none;}caption,th{text-align:left;}h1,h2,h3,h4,h5,h6{font-size:100%;font-weight:normal;}q:before,q:after{content:'';}abbr,acronym{border:0;font-variant:normal;}sup{vertical-align:text-top;}sub{vertical-align:text-bottom;}input,textarea,select{font-family:inherit;font-size:inherit;font-weight:inherit;}input,textarea,select{*font-size:100%;}legend{color:#000;}a,a:visited{color:inherit;text-decoration:none}
+
+/* clearfix */
+.clearfix:after{content:".";display:block;clear:both;visibility:hidden;line-height:0;height:0;}.clearfix{display:inline-block;}html[xmlns] .clearfix{display:block;}* html .clearfix{height:1%;}div.clearfix{display:block;}
+
+/* main */
+html, body {
+    position: absolute;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: auto;
+}
+
+
+/* typography */
+@font-face {
+      font-family: "DIN-Bold";
+      src: url(DIN-Bold.ttf);
+}
+@font-face {
+      font-family: "DIN-Reg";
+      src: url(DIN-Reg.ttf);
+}
+.DIN-bold { font-family: "DIN-Bold", sans-serif }
+.DIN-reg { font-family: "DIN-Regular", sans-serif }
+
+body {
+    background: #F5F4EB;
+    font-family: "Trebuchet MS", sans-serif;
+    font-size: 12px;
+    color: #000;
+}
+
+.ui-impr {
+    text-shadow: 0 -1px 1px #000;
+}
+.ui-pop {
+    text-shadow: 0 1px 1px #000;
+}
+
+a {
+	color: #e4542e;
+	font-weight: bold;
+}
+#table a:hover {
+	text-decoration: underline;
+}
+a:visited {
+	color: #e4542e;
+}
+
+/* buttons */
+
+.ui-button {
+    float: left;
+    padding: 0 6px;
+    border: none;
+    background: #e4532d;
+    border-radius: 3px;
+    font-size: 11px;
+    line-height: 25px;
+    color: #fff;
+    font-weight: bold;
+    /* text-shadow: 0 -1px 1px #e29700; */
+    cursor: pointer;
+    text-transform: uppercase;
+}
+.ui-button:hover {
+    opacity: 0.8;
+}
+.ui-button:active {
+	opacity: 1;
+    background: #d4431d;
+}
+
+.ui-button-add span {
+
+}
+
+/* Update to BL URLs at launch on BL namespace */
+
+#header {
+  position: relative;
+  height: 40px;
+  background: #5ec5e2;
+}
+	#header h1 {
+		float: left;
+	}
+
+#nav {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+    #nav li {
+    }
+    
+    #nav a {
+        float: right;
+        margin: 12px 25px 0 0;
+        font-weight: 500;
+        color: #fff;
+        cursor: pointer;
+        text-transform: uppercase;
+    }

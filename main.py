@@ -37,6 +37,8 @@ from google.appengine.api import memcache
 from google.appengine.api import users
 from google.appengine.api import quota
 
+from django.utils import simplejson
+
 WIKI_URL = 'http://sfhomeless.wikia.com/'
 
 PARENT_CATEGORIES = ['Employment',
@@ -796,33 +798,65 @@ class GetImage(webapp.RequestHandler):
 class SaveHandler(webapp.RequestHandler):
   """TODO."""
 
-  def get(self):
+  def post(self):
     """TODO."""
 
-    id_list = self.request.get('ids').sort()
+    id_list = self.request.get_all('ids[]')
+    id_list.sort()
+    
     hashed_ids = hashlib.sha1(''.join(map(str, id_list))).hexdigest()
     saved_map = SavedMap().all().filter('url =', hashed_ids).get()
     if not saved_map:
       saved_map = SavedMap(url=hashed_ids)
       saved_map.resources = id_list
       saved_map.put()
-
-    return hashed_ids
+      
+    #self.response.headers.add_header('content-type', 'text/json')
+    self.response.out.write(simplejson.dumps(hashed_ids))
 
 
 class SavedMapHandler(webapp.RequestHandler):
-  """TODO."""
+ """TODO."""
 
-  def get(self):
-    """TODO."""
+ def get(self):
+   """TODO."""
 
-    hashed_id = self.request.get('id')
-    saved_map = SavedMap().all().filter('url =', hashed_ids).get()
-    template_values = {
-        'saved_map': saved_map,
-    }
-    path = os.path.join(os.path.dirname(__file__), 'map.html')
-    self.response.out.write(template.render(path, template_values))
+   hashed_id = self.request.get('id')
+   saved_map = SavedMap().all().filter('url =', hashed_id).get()
+   
+   resources = {}
+   ids = saved_map.resources
+   #ids = [12, 13] #TODO: get rid of dummy data
+   
+   properties = Resource().properties()
+   
+   logging.info('kyle')
+   logging.info(properties)
+   
+   for resourceId in ids:
+       resource = Resource().get_by_id(int(resourceId));
+       resources[resourceId] = {
+           'name': resource.name,
+           'url': resource.wikiurl,
+           'categories': resource.categories,
+           'address': resource.address,
+           'phone': resource.phone,
+           'hours': resource.hours,
+           'website': resource.website,
+       }
+   
+   template_values = {
+       'json': simplejson.dumps({
+           'ids': ids,
+           'resources': resources,
+           'name': saved_map.name,
+           'url': saved_map.url,
+       }),
+       'resources': resources,
+       'ids': ids,
+   }
+   path = os.path.join(os.path.dirname(__file__), 'map.html')
+   self.response.out.write(template.render(path, template_values))
 
 
 def main():
