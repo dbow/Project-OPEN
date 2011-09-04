@@ -1,0 +1,16 @@
+body, html {
+	height: 100%;
+}
+.m {
+	margin: 100px auto;
+	padding-left: 100px;
+	width: 500px;
+	background: url(img/publicmapmap.png) no-repeat left top;
+}
+
+.t {
+	font-size: 26px;
+}
+.s {
+	font-size: 18px;
+}

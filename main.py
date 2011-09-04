@@ -809,6 +809,13 @@ class MainHandler(webapp.RequestHandler):
     }
     path = os.path.join(os.path.dirname(__file__), 'index.html')
     self.response.out.write(template.render(path, template_values))
+    
+class SplashHandler(webapp.RequestHandler):
+  """A temporary splash page to hold a place for the site."""
+
+  def get(self):
+    path = os.path.join(os.path.dirname(__file__), 'splash.html')
+    self.response.out.write(template.render(path, {}))
 
 
 class GetImage(webapp.RequestHandler):
@@ -899,7 +906,8 @@ class SavedMapHandler(webapp.RequestHandler):
 
 def main():
     application = webapp.WSGIApplication(
-        [('/', MainHandler),
+        [('/', SplashHandler),
+         ('/main', MainHandler),
          ('/image', GetImage),
          ('/save', SaveHandler),
          ('/map', SavedMapHandler),
