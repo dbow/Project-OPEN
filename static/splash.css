@@ -1,7 +1,18 @@
+@font-face {
+    font-family: 'QuicksandBold';
+    src: url('fonts/Quicksand_Bold-webfont.eot');
+    src: url('fonts/Quicksand_Bold-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/Quicksand_Bold-webfont.woff') format('woff'),
+         url('fonts/Quicksand_Bold-webfont.ttf') format('truetype'),
+         url('fonts/Quicksand_Bold-webfont.svg#QuicksandBold') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
 body, html {
 	height: 100%;
 	background: #ffefbb;
-	font-weight: 600;
+	font-family: 'QuicksandBold', sans-serif;
 }
 .p {
 	margin: 10px auto;
@@ -43,7 +54,6 @@ form {
 strong {
 	display: block;
 	font-size: 14px;
-	font-weight: 600;
 	border-bottom: 1px solid #fff;
 	padding-bottom: 15px;
 	margin-bottom: 15px;
