@@ -5,21 +5,20 @@
 		<link type="text/css" rel="stylesheet" href="static/global.css" />
 		<link type="text/css" rel="stylesheet" href="static/splash.css" />
 	</head>
-	<body>
+	<body class="DIN-reg">
 		<div class="p">
 			<div class="m">
-				<div class="t DIN-bold">projectOPEN</div>
-				<div class="s">makes creating maps of resources and services in San Francisco as easy as hitting "print". We're working on the finishing touches and should be ready soon!</div>
+				<div class="t"></div>
+				<div class="s">Make creating maps of resources and services in San Francisco as easy as hitting "print". We're working on the finishing touches and should be ready soon!</div>
 			</div>
 			<form class="clearfix" action="https://docs.google.com/spreadsheet/formResponse?formkey=dFhxR1FIZnM2NDd3ZkZGZU9BZDNBYVE6MQ&amp;ifq" method="POST" target="_blank" onsubmit="return confirm(&quot;You are submitting information to an external page.\nAre you sure?&quot;);">
-				<strong>Want an update when projectOPEN SF is ready to use? Fill out your information below and we&#39;ll let you know!</strong><br /> 
-				<label><br /> 
-				  What&#39;s your email address? </label> 
-				<label></label> 
-				<input type="text" name="entry.0.single" value=""> 
-				<br /> 
-				<label><br /> 
-				  Why are you interested in this project?</label><label></label> 
+				<strong>Want an update when projectOPEN SF is ready to use? Fill out your information below and we&#39;ll let you know!</strong>
+				<div class="email">
+					<label>What&#39;s your email address? </label> 
+					<input type="text" class="input-text" name="entry.0.single" value="">
+				</div>
+				<label>
+				  Why are you interested in projectOPEN?</label>
 				<ul> 
 				  <p> 
 				    <label> 
@@ -40,13 +39,14 @@
 				    <br /> 
 				    <input type="radio" name="entry.1.group" value="__option__"> 
 				    <label>Other:</label> 
-				    <input type="text" name="entry.1.group.other_option_" value=""> 
+				    <input type="text" class="input-text" name="entry.1.group.other_option_" value=""> 
 				  </p> 
-				</ul> 
-				<br /> 
+				</ul>
 				<input type="hidden" name="pageNumber" value="0"> 
-				<input type="hidden" name="backupCache" value=""> 
-				<input type="submit" class="ui-button" name="submit" value="Send me updates!"> 
+				<input type="hidden" name="backupCache" value="">
+				<div class="buttons">
+					<input type="submit" class="submit" name="submit" value=" "> 
+				</div>
 			</form>
 		</div>
 	</body>

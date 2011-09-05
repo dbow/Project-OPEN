@@ -1,41 +1,80 @@
 body, html {
 	height: 100%;
+	background: #ffefbb;
 }
 .p {
-	margin: 100px auto;
-	width: 500px;
+	margin: 10px auto;
+	width: 400px;
 }
 .m {
-	padding-left: 100px;
-	background: url(img/publicmapmap.png) no-repeat left top;
+	padding-top: 120px;
+	background: url(img/landing/pin.png) no-repeat center top;
 }
 
 .t {
 	font-size: 26px;
+	background: url(img/landing/logo.png) no-repeat center center;
+	height: 35px;
 }
 .s {
-	font-size: 18px;
+	margin: 15px 0;
+	font-size: 14px;
+	font-weight: bold;
+	text-align: center;
 }
 
 form {
-	margin-top: 20px;
-	font-size: 14px;
-	padding: 10px;
-	background-color: white;
-	border: 4px solid #AAA;
+	font-size: 12px;
+	font-weight: bold;
+	padding: 25px;
+	background-color: #ffdd7d;
+	border-radius: 20px;
 }
 
+.email {
+	margin-bottom: 15px;
+}
+
+.input-text {
+	border: none;
+	width: 150px;
+	padding: 6px 5px;
+	margin-left: 5px;
+}
 strong {
+	display: block;
 	font-weight: bold;
-	font-size: 18px;
+	font-size: 14px;
+	border-bottom: 1px solid #fff;
+	padding-bottom: 15px;
+	margin-bottom: 15px;
 }
 
 p {
-	margin-top: 10px;
-	padding-left: 50px;
-	line-height: 18px;
+	padding: 0 0 15px 5px;
+	line-height: 26px;
+	margin: 5px 0 25px;
+	border-bottom: 1px solid #fff;
 }
 
 label {
 	margin: 0 0 5px 0;
+}
+
+.buttons {
+	text-align: center;
+}
+.submit {
+	display: inline;
+	border: none;
+	background: url(img/landing/button.png) no-repeat;
+	height: 57px;
+	width: 229px;
+	
+}
+.submit:hover {
+	background-position-y: -57px;
+}
+.submit:active {
+	background-position-y: -114px;
 }
