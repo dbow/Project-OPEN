@@ -1,10 +1,12 @@
 body, html {
 	height: 100%;
 }
-.m {
+.p {
 	margin: 100px auto;
-	padding-left: 100px;
 	width: 500px;
+}
+.m {
+	padding-left: 100px;
 	background: url(img/publicmapmap.png) no-repeat left top;
 }
 
@@ -13,4 +15,27 @@ body, html {
 }
 .s {
 	font-size: 18px;
+}
+
+form {
+	margin-top: 20px;
+	font-size: 14px;
+	padding: 10px;
+	background-color: white;
+	border: 4px solid #AAA;
+}
+
+strong {
+	font-weight: bold;
+	font-size: 18px;
+}
+
+p {
+	margin-top: 10px;
+	padding-left: 50px;
+	line-height: 18px;
+}
+
+label {
+	margin: 0 0 5px 0;
 }
