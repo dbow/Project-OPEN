@@ -1,6 +1,7 @@
 body, html {
 	height: 100%;
 	background: #ffefbb;
+	font-weight: 600;
 }
 .p {
 	margin: 10px auto;
@@ -19,13 +20,11 @@ body, html {
 .s {
 	margin: 15px 0;
 	font-size: 14px;
-	font-weight: bold;
 	text-align: center;
 }
 
 form {
 	font-size: 12px;
-	font-weight: bold;
 	padding: 25px;
 	background-color: #ffdd7d;
 	border-radius: 20px;
@@ -43,8 +42,8 @@ form {
 }
 strong {
 	display: block;
-	font-weight: bold;
 	font-size: 14px;
+	font-weight: 600;
 	border-bottom: 1px solid #fff;
 	padding-bottom: 15px;
 	margin-bottom: 15px;
@@ -77,4 +76,10 @@ label {
 }
 .submit:active {
 	background-position-y: -114px;
+}
+
+.copyright {
+	padding: 25px 0;
+	font-size: 12px;
+	text-align: center;
 }
