@@ -197,6 +197,13 @@ class RunningUser(db.Model):
   user = db.UserProperty(auto_current_user_add=True)
 
 
+class StaticContent(db.Model):
+  """The HTML content to serve for each of the static pages."""
+
+  page_url = db.StringProperty()
+  page_content = db.TextProperty()
+
+
 def getElementValue(semantic_property, element):
   """Retrieves the provided value from the provided XML node.
 
@@ -333,8 +340,9 @@ def getAllPages(resource_pages, continue_query=None):
   response_xml = parseString(content)
   pages = response_xml.getElementsByTagName('p')
   for page in pages:
+    pageid = page.getAttribute('pageid')
     title = page.getAttribute('title').replace("'","%27").replace(' ','_')
-    resource_pages.append(title.encode('utf-8'))
+    resource_pages.append((pageid, title.encode('utf-8')))
 
   query_continue = response_xml.getElementsByTagName('query-continue')
   if query_continue:
@@ -346,17 +354,20 @@ def getAllPages(resource_pages, continue_query=None):
   return resource_pages
 
 
-def syncResource(resource_page):
+def syncResource(resource_page, resource_id=None):
   """TODO."""
 
-  logging.info('getResourceInfo')
-  logging.info(resource_page)
+  logging.info('getResourceInfo: ' + resource_page)
+  logging.info(resource_id)
   resource_info = getResourceInfo(resource_page)
   decoded_url = resource_page.decode('utf-8')
 
   resource = Resource().all().filter('wikiurl =', decoded_url).get()
   if not resource:
-    resource = Resource()
+    if resource_id:
+      resource = Resource(key_name=resource_id)
+    else:
+      resource = Resource()
     resource.wikiurl = decoded_url
   resource.name = resource_info['Name'].decode('utf-8')
   resource.categories = resource_info['Categories']
@@ -466,6 +477,7 @@ def updateFusionTableRow(wikiurl):
   if resource.image:
     image = 'True'
   row_id = resource.key().id()
+  logging.info(row_id)
   row_info = {'Name': resource.name.encode('utf-8'),
               'Address': resource.address.encode('utf-8'),
               'GeocodedAddress': str(resource.geocoded_address),
@@ -511,8 +523,9 @@ class WikiSyncTaskHandler(webapp.RequestHandler):
   def post(self):
     """TODO."""
 
+    resource_id = self.request.get('resource_id')
     resource_page = self.request.get('resource_page')
-    syncResource(resource_page.encode('utf-8'))
+    syncResource(resource_page.encode('utf-8'), resource_id)
 
 
 class WikiSyncLauncher(webapp.RequestHandler):
@@ -525,7 +538,8 @@ class WikiSyncLauncher(webapp.RequestHandler):
     resource_pages = getAllPages(resource_list)
     num = 0
     for page in resource_pages:
-      taskqueue.add(url='/task/wikisync', params={'resource_page': page})
+      taskqueue.add(url='/task/wikisync', params={'resource_id': page[0],
+                                                  'resource_page': page[1]})
       num += 1
     self.response.out.write(str(num) + ' tasks launched.')
 
@@ -701,16 +715,38 @@ class CategorySyncTaskHandler(webapp.RequestHandler):
     FrontendCategories.
     """
 
-    resources = Resource().all()
-    all_categories = {}
-    for resource in resources:
-      for category in resource.categories:
-        if category not in all_categories:
-          all_categories[category] = 1
-        else:
-          all_categories[category] += 1
+    category_list = []
+    all_categories = getAllCategories(category_list)
     for category in all_categories:
       processCategory(category)
+
+
+def getAllCategories(category_list, continue_query=None):
+  """TODO."""
+
+  QUERY_URL = WIKI_URL + str('api.php?action=query&list=allcategories'
+                             '&aclimit=500&format=xml')
+  if continue_query:
+    QUERY_URL = QUERY_URL + '&acfrom=' + urllib.quote(continue_query)
+
+  http = httplib2.Http()
+  logging.info('http request')
+  logging.info(QUERY_URL)
+  response, content = http.request(QUERY_URL, 'GET')
+  response_xml = parseString(content)
+  categories = response_xml.getElementsByTagName('c')
+  for category in categories:
+    category_title = category.childNodes[0].data
+    category_list.append(category_title.encode('utf-8'))
+
+  query_continue = response_xml.getElementsByTagName('query-continue')
+  if query_continue:
+    cat_continue = query_continue[0].getElementsByTagName('allcategories')[0]
+    acfrom = cat_continue.getAttribute('acfrom')
+    logging.info(acfrom)
+    category_list = getAllCategories(category_list, acfrom)
+
+  return category_list
 
 
 class CategorySyncLauncher(webapp.RequestHandler):
@@ -769,6 +805,7 @@ def retrieveCategoryMapping():
 def setCategoryMapping():
   """TODO."""
 
+  logging.info('setting category mapping')
   category_map = {}
   for parent in PARENT_CATEGORIES:
     category_map[parent] = []
@@ -809,11 +846,13 @@ class MainHandler(webapp.RequestHandler):
     }
     path = os.path.join(os.path.dirname(__file__), 'index.html')
     self.response.out.write(template.render(path, template_values))
-    
+
+
 class SplashHandler(webapp.RequestHandler):
   """A temporary splash page to hold a place for the site."""
 
   def get(self):
+
     path = os.path.join(os.path.dirname(__file__), 'splash.html')
     self.response.out.write(template.render(path, {}))
 
@@ -904,10 +943,87 @@ class SavedMapHandler(webapp.RequestHandler):
    self.response.out.write(template.render(path, template_values))
 
 
+class StaticHandler(webapp.RequestHandler):
+  """Constructs static text pages for About, FAQ, and Contact."""
+
+  def get(self):
+    """Determines which page is requested and constructs it."""
+
+    requested_page = self.request.uri.split('/')[-1]
+    static_page = StaticContent().all().filter('page_url =',
+                                               requested_page).get()
+
+    if not static_page:
+      self.response.out.write('Page not created yet.')
+
+    else:
+      template_values = {
+          'page': static_page,
+      }
+      path = os.path.join(os.path.dirname(__file__), 'static.html')
+      self.response.out.write(template.render(path, template_values))
+
+
+class SetStaticHandler(webapp.RequestHandler):
+  """TODO."""
+  
+  def get(self):
+    """TODO."""
+ 
+    about = StaticContent().all().filter('page_url = ', 'about').get()
+    about_content = ''
+    if about:
+      about_content = about.page_content
+    faq = StaticContent().all().filter('page_url = ', 'faq').get()
+    faq_content = ''
+    if faq:
+      faq_content = faq.page_content
+    contact = StaticContent().all().filter('page_url = ', 'contact').get()
+    contact_content = ''
+    if contact:
+      contact_content = contact.page_content
+    self.response.out.write("""
+          <form action="/admin/static" enctype="multipart/form-data" method="post">
+            <div><label>About:</label></div>
+            <div><textarea name="about_content" rows="20" cols="90">""" + about_content +
+            """</textarea></div>
+            <div><label>FAQ:</label></div>
+            <div><textarea name="faq_content" rows="20" cols="90">""" + faq_content +
+            """</textarea></div>
+            <div><label>Contact:</label></div>
+            <div><textarea name="contact_content" rows="20" cols="90">""" + contact_content +
+            """</textarea></div>
+            <div><input type="submit" value="Update" /></div>
+          </form>
+        </body>
+      </html>""")
+
+  def post(self):
+    """TODO."""
+
+    static_dict = {}
+    static_dict['about'] = self.request.get('about_content')
+    static_dict['faq'] = self.request.get('faq_content')
+    static_dict['contact'] = self.request.get('contact_content')
+    if static_dict.keys():
+      for url in static_dict.keys():
+        static_pages = StaticContent().all()
+        page = static_pages.filter('page_url = ', url).get()
+        if not page:
+          page = StaticContent(page_url=page)
+        page.page_content = static_dict[url]
+        page.put()
+      self.redirect('/admin/static')
+
+
 def main():
     application = webapp.WSGIApplication(
         [('/', SplashHandler),
          ('/main', MainHandler),
+         ('/about', StaticHandler),
+         ('/contact', StaticHandler),
+         ('/faq', StaticHandler),
+         ('/admin/static', SetStaticHandler), #TODO(dbow): make admin-only.
          ('/image', GetImage),
          ('/save', SaveHandler),
          ('/map', SavedMapHandler),

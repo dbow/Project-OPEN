@@ -9,13 +9,13 @@ $(function () {
     $('#resource_form').submit();
   });
   $('.resource_sync > input').click(function() {
-    var wikiUrl = $(this).parent().next().next().text();
+    var wikiUrl = $(this).parent().siblings('.resource_url').text();
     $('[name=wiki_url]').val(wikiUrl);
     $('[name=action]').val('WikiSync');
     $('#resource_form').submit();
   });
   $('.resource_fusion_sync > input').click(function() {
-    var wikiUrl = $(this).parent().next().text();
+    var wikiUrl = $(this).parent().siblings('.resource_url').text();
     $('[name=wiki_url]').val(wikiUrl);
     $('[name=action]').val('FusionSync');
     $('#resource_form').submit();

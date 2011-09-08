@@ -84,10 +84,12 @@ a:visited {
 #header {
   position: relative;
   height: 40px;
-  background: #5ec5e2;
+  background: #5ec5c2;
 }
 	#header h1 {
 		float: left;
+		margin-left: 37px;
+		margin-top: 3px;
 	}
 
 #nav {
@@ -101,9 +103,16 @@ a:visited {
     
     #nav a {
         float: right;
-        margin: 12px 25px 0 0;
+        margin: 5px 18px 0 0;
         font-weight: 500;
         color: #fff;
         cursor: pointer;
         text-transform: uppercase;
+        padding: 7px;
+        border-radius: 3px;
+    }
+    
+    #nav li.current a {
+        background:#E4532D;
+    }
     }
