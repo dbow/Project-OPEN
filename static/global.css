@@ -115,4 +115,13 @@ a:visited {
     #nav li.current a {
         background:#E4532D;
     }
-    }
+ 
+.rail-option-copy {
+	position: absolute;
+	bottom: -20px;
+	left: 0;
+	font-size: 12px;
+	line-height: 20px;
+	width: 200px;
+	-webkit-box-shadow: 0 0 3px #000;
+}

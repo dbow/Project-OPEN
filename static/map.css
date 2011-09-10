@@ -22,6 +22,7 @@
 		}
 		
 	.header-sub-options {
+		position: relative;
 		float: right;
 		border-radius: 10px;
 		background: #aaa;

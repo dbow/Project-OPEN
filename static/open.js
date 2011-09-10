@@ -539,6 +539,7 @@ for (var i in _filtered) {
     
     me.receive = function (response) {
         _cache = response;
+        console.log(response);
         me.filter();
     };
     
@@ -599,11 +600,14 @@ OP.MyGuide = (function () {
 	};
 	
 	me.url = function (hash) {
-		return OP.SITE_ROOT + '/map?id=' + hash
+		return OP.SITE_ROOT + '/map?id=' + hash;
 	};
 	
 	me.link2 = function (hash) {
-		alert(me.url(hash));
+		$('.rail-option-copy').val(me.url(hash)).show().select();
+		$(document.body).one('click', function () {
+			$('.rail-option-copy').hide();
+		});
 	}
 	me.link = function () {
 		me.save(me.link2);
@@ -630,6 +634,10 @@ OP.MyGuide = (function () {
         $('.rail-option-link').click(me.link);
         $('.rail-option-email').click(me.email);
         $('.rail-option-print').click(me.print);
+        $('.rail-option-copy').click(function (event) {
+        	event.stopPropagation();
+        	$(this).select();
+        });
 	};
 	
 	return me;
@@ -638,7 +646,9 @@ OP.MyGuide = (function () {
 
 OP.Map = (function () {
 	var me = {},
-		_hash;
+	
+		_hash,
+		_data;
 	
 	me.print = function () {
 		$('body').addClass('print');
@@ -650,7 +660,8 @@ OP.Map = (function () {
 		OP.MyGuide.email2(_hash);
 	};
 	
-	me.link = function () {
+	me.link = function (event) {
+		event.stopPropagation();
 		OP.MyGuide.link2(_hash);
 	};
 	
@@ -679,23 +690,77 @@ OP.Map = (function () {
 	
 	me.createStatic = function (data) {
 		_hash = data.url;
-
-		var map = new google.maps.Map(document.getElementById('map'), {
-				center: sf_latlng,
-				zoom: 13,
-				disableDefaultUI: true,
-				draggable: false,
-				mapTypeId: 'roadmap',
-				scrollwheel: false
-			}),
+		_data = data;
+		
+		var queryText = "SELECT 'ID','GeocodedAddress' FROM " + OP.FUSION_ID + " WHERE ID IN (" + data.ids.join(',') + ")";
+	      $.ajax({
+	      	url: 'http://www.google.com/fusiontables/api/query',
+	      	data: {sql: queryText},
+	      	dataType: 'jsonp',
+	      	jsonp: 'jsonCallback',
+	      	success: me.receive
+	      });
+	      
+	    
+	};
+	
+	me.receive = function (data) {
+		var pos, lat, long,
+			latMax = -1000, latMin = 1000, longMax = -1000, longMin = 1000,
+			sw, ne, bounds,
+			map, ids, whereClause, layer;
+		
+		console.log(data);
+		
+		// find bounds
+		for (var i in data.table.rows) {
+			pos = data.table.rows[i][1].split(',');
 			
-			ids = data.ids.join(',');
+			if (pos[0] !== 'None') {
+				lat = parseFloat(pos[0]);
+				long = parseFloat(pos[1]);
+				
+				if (latMax < lat) {
+					latMax = lat;
+				}
+				if (latMin > lat) {
+					latMin = lat;
+				}
+				
+				if (longMax < long) {
+					longMax = long;
+				}
+				if (longMin > long) {
+					longMin = long;
+				}
+			}
+		}
+		
+		map = new google.maps.Map(document.getElementById('map'), {
+			center: sf_latlng,
+			zoom: 13,
+			disableDefaultUI: true,
+			draggable: false,
+			mapTypeId: 'roadmap',
+			scrollwheel: false
+		});
+		
+		if (latMin !== 1000) {
+			sw = new google.maps.LatLng(latMin, longMin);
+			ne = new google.maps.LatLng(latMax, longMax);
+			bounds = new google.maps.LatLngBounds(sw, ne);
+			
+			map.fitBounds(bounds);
+		}
+			
+		ids = _data.ids.join(',');
+		whereClause = 'ID IN (' + ids + ')';
 		
 		layer = new google.maps.FusionTablesLayer({
 			query: {
 				select: 'Address',
 				from: OP.FUSION_ID,
-				where: 'ID IN (' + ids + ')'
+				where: whereClause
 			}
 		});
 		
@@ -706,6 +771,10 @@ OP.Map = (function () {
 		$('.header-sub-option-print').click(me.print);
 		$('.header-sub-option-link').click(me.link);
 		$('.header-sub-option-email').click(me.email);
+		$('.rail-option-copy').click(function (event) {
+        	event.stopPropagation();
+        	$(this).select();
+        });
 	};
 	
 	return me;
@@ -813,7 +882,7 @@ OP.Util = (function () {
 	    me.copy(inElement.value);
 	  }
 	}
-	
+
 	me.copy = function (text) {
 	    var flashcopier = 'flashcopier';
 	    if(!document.getElementById(flashcopier)) {
