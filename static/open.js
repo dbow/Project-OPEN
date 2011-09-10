@@ -13,7 +13,9 @@ var sf_latlng = new google.maps.LatLng(37.77493,-122.419416);
 OP.FusionMap = (function () {
 
     var me = {},
-		  _targetLocation;
+      layer,
+		  _targetLocation,
+		  _listener;
     
     me.changeData = function () {
       var whereClause = "";
@@ -25,7 +27,10 @@ OP.FusionMap = (function () {
                        ", LATLNG" + mapBounds.getNorthEast() + "))";
       }
   
-      var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + OP.FUSION_ID + whereClause;
+      var queryText = "SELECT " +
+                      "'Name','ID','Website','Address','Categories','Summary'," +
+                      "'Image','Wiki URL','DisplayFilter','FilterCategories' " +
+                      "FROM " + OP.FUSION_ID + whereClause;
       $.ajax({
       	url: 'http://www.google.com/fusiontables/api/query',
       	data: {sql: queryText},
@@ -44,11 +49,49 @@ OP.FusionMap = (function () {
         scrollwheel: false
       });
 
-      var layer = new google.maps.FusionTablesLayer({
-        query: {
+      me.updateLayer('all');
+
+      OP.Util.setHeights();
+
+      google.maps.event.addListener(map, 'idle', function() {
+        me.changeData();
+        if(!initialBounds) {
+          initialBounds = map.getBounds();
+        }
+      });
+      
+    };
+    
+    me.updateLayer = function (ids) {
+      var queryParams = {
           select: 'Address',
-          from: OP.FUSION_ID
-        },
+          from: OP.FUSION_ID,
+        }
+      if (ids != 'all') {
+        var idString = '0';
+        if (ids.length) {
+          // Very broad queries can generate URIs that are too large
+          // so only the first ~160 or so IDs are submitted.
+          // TODO(dbow): Figure out a better solution for this.
+          if (ids.length > 170) {
+            ids = ids.slice(0,169);
+          }
+          idString = ids.join(',');
+        }
+        var whereString = 'ID IN (' + idString + ')';     
+        queryParams.where = whereString;
+      }
+      
+      // TODO(dbow): After the first time the layer is set, the styling does
+      // not show up in the map (though the stylizeLayer function seems to
+      // be running correctly).  Need to figure this out.
+      if (layer) {
+        layer.setMap(null);
+        google.maps.event.removeListener(_listener);
+        layer = null;
+      }
+      layer = new google.maps.FusionTablesLayer({
+        query: queryParams,
         // FusionTablesLayer only supports up to 5 custom styles...
         styles: [{
           markerOptions: {
@@ -77,12 +120,16 @@ OP.FusionMap = (function () {
         }]
       });
       layer.setMap(map);
-
+      me.stylizeLayer(layer);
+    };
+    
+    me.stylizeLayer = function (layer) {
       // add a click listener to the layer, so we can customize the info window
       // when it's displayed.
-      google.maps.event.addListener(layer, 'click', function(e) {
+      _listener = google.maps.event.addListener(layer, 'click', function(e) {
         //update the content of the InfoWindow
-        e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' + e.row['Name'].value + '</div>';
+        e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
+                           e.row['Name'].value + '</div>';
         if (e.row['Categories'].value != 'None') {
           e.infoWindowHtml += '<div class="table-services">' +
                                e.row['Categories'].value + '</br></div>';
@@ -103,16 +150,6 @@ OP.FusionMap = (function () {
           e.infoWindowHtml += '</div>';
         }
       });
-
-      setHeights();
-
-      google.maps.event.addListener(map, 'idle', function() {
-        me.changeData();
-        if(!initialBounds) {
-          initialBounds = map.getBounds();
-        }
-      });
-      
     };
     
     me.updateMap = function (location) {
@@ -123,7 +160,8 @@ OP.FusionMap = (function () {
         if(navigator.geolocation) {
           browserSupportFlag = true;
           navigator.geolocation.getCurrentPosition(function(position) {
-            _targetLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            _targetLocation = new google.maps.LatLng(position.coords.latitude,
+                                                     position.coords.longitude);
             map.setCenter(_targetLocation);
           }, function() {
             me.handleNoGeolocation(browserSupportFlag);
@@ -148,8 +186,10 @@ OP.FusionMap = (function () {
                 position: results[0].geometry.location
             });
           } else {
-            alert("We could not determine the location of the provided address.  Please try again!");
-            console.log("Geocode was not successful for the following reason: " + status);
+            alert("We could not determine the location of the provided address." +
+                  "Please try again!");
+            console.log("Geocode was not successful for the following reason: " +
+                        status);
           }
         }); 
       }      
@@ -162,7 +202,8 @@ OP.FusionMap = (function () {
         console.log("Your browser doesn't support geolocation.");
       }
       _targetLocation = sf_latlng;
-      alert("We could not determine your location :(  Please provide a specific address.");
+      alert("We could not determine your location :( " +
+            "Please provide a specific address.");
       map.setCenter(_targetLocation);
     };
     
@@ -179,11 +220,6 @@ OP.FusionMap = (function () {
 }());
 
 
-OP.performSearch = function() {
-  OP.Data.filter();
-}
-
-
 OP.Cats = (function () {
     var me = {},
     
@@ -193,9 +229,13 @@ OP.Cats = (function () {
     // data
     _selected = {};
     
+    me.getSelected = function () {
+      return _selected;
+    };
+    
     me.retrieve = function () {
       var parentCategories = [];
-      for(var prop in categoryMapping) {
+      for(var prop in OP.categoryMapping) {
         parentCategories.push(prop);
       }
       var categoryList = [];
@@ -208,18 +248,11 @@ OP.Cats = (function () {
     };
     
     me.populate = function (categories) {
-        /* 	var categories = [
-    	   {cat: 'All'},
-    	   {cat: 'Housing / Shelter'},
-    	   {cat: 'AIDS Treatment / Prevention'},
-    	]; */
     	
     	var cats = $("#cats"),
             tmpl = cats.html(),
             table = $('<table/>'),
             row = $('<tr/>').appendTo(table);
-        
-        //cats.html('');
         
         for (var i = 0, j = 0; i < categories.length; i++) {
         	if (j > 4) {
@@ -228,14 +261,15 @@ OP.Cats = (function () {
         	}
         	
         	row.append(
-        		'<td class="cat"><div class="cat-box"></div>' + categories[i].cat + '</td>'
+        		'<td class="cat"><div class="cat-box"></div>' +
+        		categories[i].cat + '</td>'
         	);
         	j++;
         }
         
     	//$.tmpl(tmpl, categories).click(_click).appendTo("#cats");
     	cats.append(table).delegate('.cat', 'click', _click);
-    	setHeights();
+    	OP.Util.setHeights();
     };
     
     _click = function () {
@@ -256,7 +290,7 @@ OP.Cats = (function () {
             _selected[el.text()] = 1;
         }
         
-        OP.Data.filter(OP.Util.toArrayKeys(_selected));
+        OP.Data.filter();
     };
     
     return me;
@@ -266,11 +300,12 @@ OP.Cats = (function () {
 OP.Data = (function () {
     var me = {},
     
-    // data
-    _cache,
-    _table,
+    _cache, // The fusion table query data (rows within the map bounds, before filtering)
+    _table = $("#table").html(''),
     _tmpl = $("#table").template('table'),
-    _filtered = [];
+    _filtered = [], // The rows returned after category filtering
+    _results = [], // The rows returned after both category and search filtering
+    _ids = []; // The IDs of the _results rows.
     
     $("#table").html('');
     
@@ -280,20 +315,77 @@ OP.Data = (function () {
     me.getTable = function () {
         return _table;
     };
-    
     me.getFiltered = function () {
     	return _filtered;
     };
+    me.getResults = function () {
+    	return _results;
+    };
     
-    me.filter = function (cats) {
-    	var html = '',
-    		table = $("#table").html(''),
-    		row,
-    		rows = _cache.table.rows,
-    		catsKeyed = {},
-    		i, j,
-    		search = $("#search-box");
-    	_filtered = [];
+    me.performSearch = function () {
+      console.log('search');
+      console.log(_cache.table.rows.length);
+      console.log(_filtered.length);
+      console.log(_results.length);
+      var rows = _filtered,
+          search = $("#search-box"),
+          _table = $("#table").html(''),
+          _ids = [],
+          searchPerformed = false,
+          searchQuery = search.val();
+
+      if (_results.length) {
+        _results = [];
+      }
+
+      if (searchQuery && searchQuery !== search.attr('title')) {
+        searchPerformed = true;
+      }
+      for (var i in rows) {
+        var rowMatches = false;
+        if (searchPerformed) {
+          var searchRegex = new RegExp($('#search-box').val(), 'i');
+          for (var field = 0; field < 6; field++) {
+            if (searchRegex.test(rows[i][field])) {
+              rowMatches = true;
+            }
+          }
+        }
+        if (rowMatches || !searchPerformed) {
+            _results.push(rows[i]);
+        		me.buildRow(rows[i]);
+        		_ids.push(rows[i][1]);
+        }
+      }
+      
+      console.log('end');
+      console.log(_cache.table.rows.length);
+      console.log(_filtered.length);
+      console.log(_results.length);
+      
+      $("#table").show();
+      OP.Util.setHeights();
+      console.log('ids');
+      console.log(_ids.length);
+      if (_results.length == _cache.table.rows.length) {
+        _ids = 'all';
+      }
+      OP.FusionMap.updateLayer(_ids);
+    };
+    
+    me.filter = function () {
+      console.log('filter');
+      console.log(_cache.table.rows.length);
+      console.log(_filtered.length);
+      console.log(_results.length);
+    	var rows = _cache.table.rows,
+    	  cats = OP.Util.toArrayKeys(OP.Cats.getSelected()),
+    		_table = $("#table").html(''),
+    		catsKeyed = {};
+    		
+    		if (_filtered.length) {
+    		  _filtered = [];
+    		}
     
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
@@ -303,33 +395,28 @@ OP.Data = (function () {
         	cats = null;
         }
         
-        table.hide();
+        _table.hide();
         
+        /*
+          TODO(dbow): If we decide to have search results dictate the bounds of
+          the map, we'll need to uncomment and complete the code in the sections below.
+        */
+
         //var geocoder = new google.maps.Geocoder();
         //var bounds = new google.maps.LatLngBounds();
         for (var i in rows) {
-          if (search.val() && search.val() !== search.attr('title')) {
-            var searchRegex = new RegExp($('#search-box').val(), 'i');
-            var rowMatches = false;
-            for (var field = 0; field < 6; field++) {
-              if (searchRegex.test(rows[i][field])) {
-                rowMatches = true;
-              }
-            }
-            if (!rowMatches) {
-              continue;
-            }
-          }
           var inCategory = false;
           var filteredCats = rows[i][9].split(', ');
           var filteredLen = filteredCats.length;
-          for (j = 0; j < filteredLen; j++) {
+          for (var j = 0; j < filteredLen; j++) {
             if(catsKeyed[filteredCats[j]]) {
               inCategory = true;
             }
           }
         	if (!cats || inCategory) {
+        		
         		_filtered.push(rows[i]);
+        		
             //console.log('looking at address: ' + rows[i][3]);
             //geocoder.geocode(
             //    {'address': rows[i][3]},
@@ -341,58 +428,71 @@ OP.Data = (function () {
             //        console.log("Address not found: " + rows[i][3]);
             //      }
             //    });
-            var catValues = rows[i][4]
-            var websiteContent = '';
-            if (rows[i][2] != 'None') {
-              websiteContent = '<div class="cell table-link"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][2] + '</a></div>';
-            }
-            var summaryInfo = '';
-            var showMoreInfo = '';
-            if (rows[i][5] != 'None') {
-              summaryInfo = '<div class="table-more" style="display: none;">' +
-	        			'<div class="cell table-info">' + rows[i][5] + '</div>' +
-	        		'</div>';
-              showMoreInfo = '<div class="table-toggle">More Information</div>';
-            }
-            /*
-            var imageInfo = '<img class="table-img" src="/image?filter=' + rows[i][8] + '"/>';
-            if (rows[i][6] == 'True') {
-              imageInfo = '<img class="table-img" src="/image?wikiurl=' + rows[i][7] + '" />';
-            } */
-            imageInfo = '';
-	        	row = $(
-	        	'<div class="row clearfix" id="' + rows[i][1] + '">' +
-	        		'<div class="clearfix">' +
-	        			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
-		        		imageInfo +
-		        		'<div class="table-cells">' +
-			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ OP.WIKI_URL + rows[i][7] +'">' + rows[i][0] + '</a></div>' +
-			        		'<div class="cell table-services">' + catValues + '</div>' +
-			        		'<div class="cell table-address">' + rows[i][3] + '</div>' +
-			        		websiteContent +
-			        		showMoreInfo +
-		        		'</div>' +
-	        		'</div>' +
-	        		summaryInfo +
-	        		/*
-'<div class="cell directions"><button>Directions</button></div>' +
-	        		'<div class="cell directions-menu"><form action="/directions" id="directions-form">' +
-	        		  '<p>From: </p><input type="text" name="origin" value="" />' +
-								'<p>To: </p><input type="text" name="destination" value="' + rows[i][3] + '" />' +
-								'<input type="submit" value="Get Directions"></form></div>' +
-*/
-	        		//'<div class="cell name"><a target="_blank" href="'+ rows[i][2] +'">' + rows[i][0] + '</a></div>' +
-	        	'</div>'
-	        	).data('id', rows[i][1]).appendTo(table);
         	}
         }
         
-        //map.fitBounds(bounds);
-
-        $("#table").show();
+        me.performSearch();
         
-		//$("#table").html( $.tmpl('table', _cache.table.rows) );
-        setHeights();
+        //map.fitBounds(bounds);
+        
+		//$("#table").html( $.tmpl('_table', _cache._table.rows) );
+
+    };
+    
+    me.buildRow = function(row) {
+
+      var rowHTML,
+          name = row[0],
+          id = row[1],
+          website = row[2],
+          address = row[3],
+          categories = row[4],
+          summary = row[5],
+          image = row[6],
+          resourceURL = row[7],
+          displayFilter = row[8]
+          websiteHTML = '',
+          summaryHTML = '',
+          showMoreInfo = '',
+          imageInfo = '';  //'<img class="table-img" src="/image?filter=' + displayFilter + '"/>';
+
+      if (website != 'None') {
+        websiteHTML = '<div class="cell table-link"><a target="_blank" href="'+
+                         website +'">' + website + '</a></div>';
+      }
+
+      if (summary != 'None') {
+        summaryHTML = '<div class="table-more" style="display: none;">' +
+    			'<div class="cell table-info">' + summary + '</div>' +
+    		'</div>';
+        showMoreInfo = '<div class="table-toggle">More Information</div>';
+      }
+
+      /*
+      // TODO(dbow): Temporarily removing images to speed frontend rendering.
+      if (image == 'True') {
+        imageInfo = '<img class="table-img" src="/image?wikiurl=' + wikiURL + '" />';
+      } */
+
+    	rowHTML = $(
+    	'<div class="row clearfix" id="' + id + '">' +
+    		'<div class="clearfix">' +
+    			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
+      		imageInfo +
+      		'<div class="table-cells">' +
+        		'<div class="cell table-name DIN-bold">' +
+        		'<a target="_blank" href="'+ OP.WIKI_URL + resourceURL + '">' +
+        		name + '</a></div>' +
+        		'<div class="cell table-services">' + categories + '</div>' +
+        		'<div class="cell table-address">' + address + '</div>' +
+        		websiteHTML +
+        		showMoreInfo +
+      		'</div>' +
+    		'</div>' +
+    		summaryHTML +
+    	'</div>'
+    	).data('id', id).appendTo(_table);
+
     };
     
     me.print = function () {
@@ -404,8 +504,14 @@ OP.Data = (function () {
     		
     	console.log('hi');
 
-		doc.write('<html><head><title>Print<link type="text/css" rel="stylesheet" href="/static/global.css" /><link type="text/css" rel="stylesheet" href="/static/map.css" /></title></head><body></body></html>');
-		doc.body.innerHTML = '<div style="position: relative; height: 1250px; width: 1000px;">' + $("#map").html() + '</div><div class="resources">' + $(".resources").html() + '</div>';
+		doc.write('<html><head><title>Print' +
+		          '<link type="text/css" rel="stylesheet" href="/static/global.css" />' +
+		          '<link type="text/css" rel="stylesheet" href="/static/map.css" />' +
+		          '</title></head><body></body></html>');
+		doc.body.innerHTML = '<div style="position: relative; height: 1250px; width: 1000px;">' +
+		                     $("#map").html() +
+		                     '</div><div class="resources">' +
+		                     $(".resources").html() + '</div>';
 		
 		//not doing static maps
 		/*
@@ -455,8 +561,6 @@ OP.MyGuide = (function () {
     	}
     		
     	_current[id] = true;
-    	
-    	console.log(_current);
     	
     	div = $(
     		'<div class="rail-guide-entry">' +
@@ -561,7 +665,7 @@ OP.Map = (function () {
 		
 		layer = new google.maps.FusionTablesLayer(OP.FUSION_ID);
 		layer.setMap(map);
-		setHeights();
+		OP.Util.setHeights();
 		
 		google.maps.event.addListener(map, 'idle', function() {
 			OP.FusionMap.changeData();
@@ -585,7 +689,7 @@ OP.Map = (function () {
 				scrollwheel: false
 			}),
 			
-			ids = data.ids.join(',');	
+			ids = data.ids.join(',');
 		
 		layer = new google.maps.FusionTablesLayer({
 			query: {
@@ -605,9 +709,11 @@ OP.Map = (function () {
 	};
 	
 	return me;
+
 }());
 
 OP.Util = (function () {
+
     var me = {};
     
     // set up default functionallity
@@ -708,7 +814,7 @@ OP.Util = (function () {
 	  }
 	}
 	
-	 me.copy = function (text) {
+	me.copy = function (text) {
 	    var flashcopier = 'flashcopier';
 	    if(!document.getElementById(flashcopier)) {
 	      var divholder = document.createElement('div');
@@ -716,16 +822,21 @@ OP.Util = (function () {
 	      document.body.appendChild(divholder);
 	    }
 	    document.getElementById(flashcopier).innerHTML = '';
-	    var divinfo = '<embed src="/static/_clipboard.swf" FlashVars="clipboard='+encodeURIComponent(text)+'" width="0" height="0" type="application/x-shockwave-flash"></embed>';
+	    var divinfo = '<embed src="/static/_clipboard.swf" FlashVars="clipboard=' +
+	                  encodeURIComponent(text) +
+	                  '" width="0" height="0" type="application/x-shockwave-flash"></embed>';
 	    document.getElementById(flashcopier).innerHTML = divinfo;
 	}
-    
-    return me;
+	
+	me.setHeights = function () {
+	  $("#rail").css('minHeight', $("#content").height() - 20);
+	};
+
+  return me;
+
 }());
 
-function setHeights() {
-    $("#rail").css('minHeight', $("#content").height() - 20);
-}
+
 
 
 $(function () {
@@ -735,7 +846,7 @@ $(function () {
 		OP.Util.setUp();
 	  OP.FusionMap.setUp();
 	  OP.Cats.retrieve();
-	  setHeights();
+	  OP.Util.setHeights();
   }
 });
 

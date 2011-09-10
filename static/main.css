@@ -20,6 +20,7 @@ h3 {
         outline: 1px solid #ccc;
         background: #fff;
         overflow: hidden;
+        min-height: 100%;
     }
 
 #rail {

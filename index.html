@@ -60,7 +60,7 @@
 					<div id="filters">
 						<div id="filters-main" class="clearfix">
 							<div id="search" class="filters-field filters-search">
-								<form id="search-form" onsubmit="OP.performSearch(); return false;">
+								<form id="search-form" onsubmit="OP.Data.performSearch(); return false;">
 									<div class="filters-label DIN-bold">Search By:</div>
 									<input type="text" id="search-box" class="ui-text-input ui-off" title="Organization, Topic" />
 									<input type="submit" value="" />
@@ -98,7 +98,7 @@
 		<script type="text/javascript" src="http://crypto-js.googlecode.com/files/2.3.0-crypto-sha1.js"></script>
 		<script type="text/javascript" src="static/open.js"></script>
 		<script type="text/javascript">
-		  var categoryMapping = {% autoescape off %}{{ category_map.0 }}{% endautoescape %};
+		  OP.categoryMapping = {% autoescape off %}{{ category_map.0 }}{% endautoescape %};
 		</script>
 	</body>
 </html>
