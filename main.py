@@ -417,7 +417,6 @@ def syncResource(resource_page, resource_id=None):
       languages = resource_info['Language-28s-29'].replace('\n', '')
       resource.languages = languages.decode('utf-8')
   image_data = getResourceImage(resource_page)
-  image_data = False
   if image_data:
     image = images.Image(str(image_data))
     image.resize(width=160, height=120)
@@ -918,7 +917,7 @@ class SavedMapHandler(webapp.RequestHandler):
    logging.info(properties)
    
    for resourceId in ids:
-       resource = Resource().get_by_id(int(resourceId));
+       resource = Resource().get_by_key_name(resourceId);
        resources[resourceId] = {
            'name': resource.name,
            'url': resource.wikiurl,

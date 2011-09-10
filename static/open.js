@@ -1,211 +1,188 @@
-google.load('visualization', '1', {'packages':['table']});
-
 var OP = {};
 
 (function () {
 
 OP.SITE_ROOT = 'http://project-open.appspot.com';
+OP.WIKI_URL = 'http://sfhomeless.wikia.com/wiki/';
+OP.FUSION_ID = 1293272;
 
 var map;
 var initialBounds;
-var sf;
-var FUSION_ID = 1293272;
-var WIKI_URL = 'http://sfhomeless.wikia.com/wiki/';
-var parentCategories = [];
+var sf_latlng = new google.maps.LatLng(37.77493,-122.419416);
 
-function changeData(update_map) {
-  var whereClause = "";
+OP.FusionMap = (function () {
 
-  if (update_map) {
-    map_bounds = map.getBounds();
-    if (map_bounds) {
-      whereClause = " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
-                    map_bounds.getSouthWest() +
-                    ", LATLNG" + map_bounds.getNorthEast() + "))";
-    }
-  }
+    var me = {},
+		  _targetLocation;
+    
+    me.changeData = function () {
+      var whereClause = "";
+
+      var mapBounds = map.getBounds();
+      if (mapBounds) {
+        whereClause += " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
+                       mapBounds.getSouthWest() +
+                       ", LATLNG" + mapBounds.getNorthEast() + "))";
+      }
   
-  var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + FUSION_ID + whereClause;
-  
-  $.ajax({
-  	url: 'http://www.google.com/fusiontables/api/query',
-  	data: {sql: queryText},
-  	dataType: 'jsonp',
-  	jsonp: 'jsonCallback',
-  	success: OP.Data.receive
-  });
-
-}
-
-function getCategoryList() {
-  for(var prop in categoryMapping) {
-    parentCategories.push(prop);
-  }
-  var categoryList = [];
-  for(i=0; i < parentCategories.length; i++) {
-    list_item = {'cat': parentCategories[i]};
-    categoryList.push(list_item);
-  }
-  OP.Cats.populate(categoryList);
-}
-
-
-function createMap(){
-
-  var sf = new google.maps.LatLng(37.77493,-122.419416);
-
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: sf,
-    zoom: 12,
-    mapTypeId: 'roadmap',
-    scrollwheel: false
-  });
-
-  layer = new google.maps.FusionTablesLayer({
-    query: {
-      select: 'Address',
-      from: FUSION_ID
-    },
-    styles: [{
-      where: "'DisplayFilter' = 'Employment'",
-      markerOptions: {
-        iconName: "small_blue"
-      }
-    }, {
-      where: "'DisplayFilter' = 'Government'",
-      markerOptions: {
-        iconName: "small_purple"
-      }
-    }, {
-      where: "'DisplayFilter' = 'Housing'",
-      markerOptions: {
-        iconName: "measle_brown"
-      }
-    }, {
-      where: "'DisplayFilter' = 'Legal'",
-      markerOptions: {
-        iconName: "small_green"
-      }
-    }, {
-      where: "'DisplayFilter' = 'Medical'",
-      markerOptions: {
-        iconName: "small_red"
-      }
-    }, {
-      where: "'DisplayFilter' = 'Special Groups'",
-      markerOptions: {
-        iconName: "measle_white"
-      }
-    }, {
-      where: "'DisplayFilter' = 'Other'",
-      markerOptions: {
-        iconName: "small_yellow"
-      }
-    }]
-  });
-  layer.setMap(map);
-
-    // add a click listener to the layer, so we can customize the info window
-    // when it's displayed.
-    google.maps.event.addListener(layer, 'click', function(e) {
-      //update the content of the InfoWindow
-      e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' + e.row['Name'].value + '</div>';
-      if (e.row['Categories'].value != 'None') {
-        e.infoWindowHtml += '<div class="table-services">' +
-                             e.row['Categories'].value + '</br></div>';
-      }
-      if (e.row['Address'].value != 'None' ||
-          e.row['Phone'].value != 'None' ||
-          e.row['Hours'].value != 'None') {
-        e.infoWindowHtml += '<div class="table-address">';
-        if (e.row['Address'].value != 'None') {
-          e.infoWindowHtml += e.row['Address'].value + '</br>';
-        }
-        if (e.row['Phone'].value != 'None') {
-          e.infoWindowHtml += e.row['Phone'].value + '</br>';
-        }
-        if (e.row['Hours'].value != 'None') {
-          e.infoWindowHtml += e.row['Hours'].value;
-        }
-        e.infoWindowHtml += '</div>';
-      }
-    });
-
-
-  setHeights();
-
-  google.maps.event.addListener(map, 'bounds_changed', function() {
-      changeData(true);
-
-  if(!initialBounds) {
-    initialBounds = map.getBounds();
-  }
-
-  });
-}
-
-
-function updateMap(location) {
-  if (location == "Current location") {
-    // Try W3C Geolocation (Preferred)
-    if(navigator.geolocation) {
-      browserSupportFlag = true;
-      navigator.geolocation.getCurrentPosition(function(position) {
-        initialLocation = new google.maps.LatLng(position.coords.latitude,position.coords.longitude);
-        map.setCenter(initialLocation);
-      }, function() {
-        handleNoGeolocation(browserSupportFlag);
+      var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + OP.FUSION_ID + whereClause;
+      $.ajax({
+      	url: 'http://www.google.com/fusiontables/api/query',
+      	data: {sql: queryText},
+      	dataType: 'jsonp',
+      	jsonp: 'jsonCallback',
+      	success: OP.Data.receive
       });
-    }
-    // Browser doesn't support Geolocation
-    else {
-      browserSupportFlag = false;
-      handleNoGeolocation(browserSupportFlag);
-    }
-  }
-  else {
-    geocoder = new google.maps.Geocoder();
+    };
+    
+    me.createMap = function () {
 
-    geocoder.geocode( { 'address': location,
-                        'bounds': initialBounds,
-                        'region': 'US',
-                        }, function(results, status) {
-      if (status == google.maps.GeocoderStatus.OK) {
-        map.setCenter(results[0].geometry.location);
-        var marker = new google.maps.Marker({
-            map: map, 
-            position: results[0].geometry.location
-        });
-      } else {
-        alert("Geocode was not successful for the following reason: " + status);
+      map = new google.maps.Map(document.getElementById('map'), {
+        center: sf_latlng,
+        zoom: 12,
+        mapTypeId: 'roadmap',
+        scrollwheel: false
+      });
+
+      var layer = new google.maps.FusionTablesLayer({
+        query: {
+          select: 'Address',
+          from: OP.FUSION_ID
+        },
+        // FusionTablesLayer only supports up to 5 custom styles...
+        styles: [{
+          markerOptions: {
+            iconName: "measle_white"
+          }
+        }, {
+          where: "'DisplayFilter' = 'Employment'",
+          markerOptions: {
+            iconName: "small_blue"
+          }
+        }, {
+          where: "'DisplayFilter' = 'Housing'",
+          markerOptions: {
+            iconName: "measle_brown"
+          }
+        }, {
+          where: "'DisplayFilter' = 'Legal'",
+          markerOptions: {
+            iconName: "small_purple"
+          }
+        }, {
+          where: "'DisplayFilter' = 'Medical'",
+          markerOptions: {
+            iconName: "small_red"
+          }
+        }]
+      });
+      layer.setMap(map);
+
+      // add a click listener to the layer, so we can customize the info window
+      // when it's displayed.
+      google.maps.event.addListener(layer, 'click', function(e) {
+        //update the content of the InfoWindow
+        e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' + e.row['Name'].value + '</div>';
+        if (e.row['Categories'].value != 'None') {
+          e.infoWindowHtml += '<div class="table-services">' +
+                               e.row['Categories'].value + '</br></div>';
+        }
+        if (e.row['Address'].value != 'None' ||
+            e.row['Phone'].value != 'None' ||
+            e.row['Hours'].value != 'None') {
+          e.infoWindowHtml += '<div class="table-address">';
+          if (e.row['Address'].value != 'None') {
+            e.infoWindowHtml += e.row['Address'].value + '</br>';
+          }
+          if (e.row['Phone'].value != 'None') {
+            e.infoWindowHtml += e.row['Phone'].value + '</br>';
+          }
+          if (e.row['Hours'].value != 'None') {
+            e.infoWindowHtml += e.row['Hours'].value;
+          }
+          e.infoWindowHtml += '</div>';
+        }
+      });
+
+      setHeights();
+
+      google.maps.event.addListener(map, 'idle', function() {
+        me.changeData();
+        if(!initialBounds) {
+          initialBounds = map.getBounds();
+        }
+      });
+      
+    };
+    
+    me.updateMap = function (location) {
+      
+      if (location == "Current location") {
+        var browserSupportFlag = false;
+        // Try W3C Geolocation (Preferred)
+        if(navigator.geolocation) {
+          browserSupportFlag = true;
+          navigator.geolocation.getCurrentPosition(function(position) {
+            _targetLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+            map.setCenter(_targetLocation);
+          }, function() {
+            me.handleNoGeolocation(browserSupportFlag);
+          });
+        }
+        // Browser doesn't support Geolocation
+        else {
+          me.handleNoGeolocation(browserSupportFlag);
+        }
       }
-    }); 
-  }
-  function handleNoGeolocation(errorFlag) {
-    if (errorFlag == true) {
-      alert("Geolocation service failed.");
-      initialLocation = sf;
-    } else {
-      alert("Your browser doesn't support geolocation.");
-      initialLocation = sf;
-    }
-    map.setCenter(initialLocation);
-  }
-}
+      else {
+        geocoder = new google.maps.Geocoder();
 
-$('#location').submit(function() {
-  updateMap($("#location-form input:first").val());
-  return false;
-});
+        geocoder.geocode( { 'address': location,
+                            'bounds': initialBounds,
+                            'region': 'US',
+                            }, function(results, status) {
+          if (status == google.maps.GeocoderStatus.OK) {
+            map.setCenter(results[0].geometry.location);
+            var marker = new google.maps.Marker({
+                map: map, 
+                position: results[0].geometry.location
+            });
+          } else {
+            alert("We could not determine the location of the provided address.  Please try again!");
+            console.log("Geocode was not successful for the following reason: " + status);
+          }
+        }); 
+      }      
+    };
+    
+    me.handleNoGeolocation = function (errorFlag) {
+      if (errorFlag == true) {
+        console.log("Geolocation service failed.");
+      } else {
+        console.log("Your browser doesn't support geolocation.");
+      }
+      _targetLocation = sf_latlng;
+      alert("We could not determine your location :(  Please provide a specific address.");
+      map.setCenter(_targetLocation);
+    };
+    
+    me.setUp = function () {
+      me.createMap();
+      $('#location').submit(function() {
+        me.updateMap($("#location-form input:first").val());
+        return false;
+      });
+    };
+
+    return me;
+
+}());
 
 
 OP.performSearch = function() {
-  changeData();
+  OP.Data.filter();
 }
 
-function setHeights() {
-    $("#rail").css('minHeight', $("#content").height() - 20);
-}
 
 OP.Cats = (function () {
     var me = {},
@@ -215,6 +192,20 @@ OP.Cats = (function () {
     
     // data
     _selected = {};
+    
+    me.retrieve = function () {
+      var parentCategories = [];
+      for(var prop in categoryMapping) {
+        parentCategories.push(prop);
+      }
+      var categoryList = [];
+      var catLen = parentCategories.length;
+      for(i=0; i < catLen; i++) {
+        var listItem = {'cat': parentCategories[i]};
+        categoryList.push(listItem);
+      }
+      me.populate(categoryList);
+    };
     
     me.populate = function (categories) {
         /* 	var categories = [
@@ -266,11 +257,11 @@ OP.Cats = (function () {
         }
         
         OP.Data.filter(OP.Util.toArrayKeys(_selected));
-        //changeData(OP.Util.toArrayKeys(_selected));
     };
     
     return me;
 }());
+
 
 OP.Data = (function () {
     var me = {},
@@ -302,15 +293,13 @@ OP.Data = (function () {
     		catsKeyed = {},
     		i, j,
     		search = $("#search-box");
-    		
     	_filtered = [];
     
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
         	  catsKeyed[cats[i]] = 1;
         	}
-        }
-        else {
+        } else {
         	cats = null;
         }
         
@@ -334,8 +323,8 @@ OP.Data = (function () {
           var inCategory = false;
           var filteredCats = rows[i][9].split(', ');
           var filteredLen = filteredCats.length;
-          for (i = 0; i < filteredLen; i++) {
-            if(catsKeyed[filteredCats[i]]) {
+          for (j = 0; j < filteredLen; j++) {
+            if(catsKeyed[filteredCats[j]]) {
               inCategory = true;
             }
           }
@@ -365,17 +354,19 @@ OP.Data = (function () {
 	        		'</div>';
               showMoreInfo = '<div class="table-toggle">More Information</div>';
             }
+            /*
             var imageInfo = '<img class="table-img" src="/image?filter=' + rows[i][8] + '"/>';
             if (rows[i][6] == 'True') {
               imageInfo = '<img class="table-img" src="/image?wikiurl=' + rows[i][7] + '" />';
-            }
+            } */
+            imageInfo = '';
 	        	row = $(
 	        	'<div class="row clearfix" id="' + rows[i][1] + '">' +
 	        		'<div class="clearfix">' +
 	        			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
 		        		imageInfo +
 		        		'<div class="table-cells">' +
-			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ WIKI_URL + rows[i][7] +'">' + rows[i][0] + '</a></div>' +
+			        		'<div class="cell table-name DIN-bold"><a target="_blank" href="'+ OP.WIKI_URL + rows[i][7] +'">' + rows[i][0] + '</a></div>' +
 			        		'<div class="cell table-services">' + catValues + '</div>' +
 			        		'<div class="cell table-address">' + rows[i][3] + '</div>' +
 			        		websiteContent +
@@ -447,6 +438,7 @@ for (var i in _filtered) {
     
     return me;
 }());
+
 
 OP.MyGuide = (function () {
 	var me = {},
@@ -539,6 +531,7 @@ OP.MyGuide = (function () {
 	return me;
 }());
 
+
 OP.Map = (function () {
 	var me = {},
 		_hash;
@@ -558,21 +551,20 @@ OP.Map = (function () {
 	};
 	
 	me.createNew = function () {
-		var sf = new google.maps.LatLng(37.77493,-122.419416);
 
 		map = new google.maps.Map(document.getElementById('map'), {
-			center: sf,
+			center: sf_latlng,
 			zoom: 12,
 			mapTypeId: 'roadmap',
 			scrollwheel: false
 		});
 		
-		layer = new google.maps.FusionTablesLayer(FUSION_ID);
+		layer = new google.maps.FusionTablesLayer(OP.FUSION_ID);
 		layer.setMap(map);
 		setHeights();
 		
-		google.maps.event.addListener(map, 'bounds_changed', function() {
-			changeData(true);
+		google.maps.event.addListener(map, 'idle', function() {
+			OP.FusionMap.changeData();
 		
 			if(!initial_bounds) {
 				initial_bounds = map.getBounds();
@@ -583,11 +575,9 @@ OP.Map = (function () {
 	
 	me.createStatic = function (data) {
 		_hash = data.url;
-	
-		var sf = new google.maps.LatLng(37.77493,-122.419416);
 
 		var map = new google.maps.Map(document.getElementById('map'), {
-				center: sf,
+				center: sf_latlng,
 				zoom: 13,
 				disableDefaultUI: true,
 				draggable: false,
@@ -600,7 +590,7 @@ OP.Map = (function () {
 		layer = new google.maps.FusionTablesLayer({
 			query: {
 				select: 'Address',
-				from: FUSION_ID,
+				from: OP.FUSION_ID,
 				where: 'ID IN (' + ids + ')'
 			}
 		});
@@ -733,17 +723,20 @@ OP.Util = (function () {
     return me;
 }());
 
+function setHeights() {
+    $("#rail").css('minHeight', $("#content").height() - 20);
+}
+
+
 $(function () {
 	if (location.pathname === '/map') {
-		console.log('hi');
 		OP.Map.setUp();
-	}
-	else {
+	}  else {
 		OP.Util.setUp();
-	    createMap();
-	    getCategoryList();
-	    setHeights();
-    }
+	  OP.FusionMap.setUp();
+	  OP.Cats.retrieve();
+	  setHeights();
+  }
 });
 
 }());
