@@ -913,19 +913,24 @@ class SavedMapHandler(webapp.RequestHandler):
    
    properties = Resource().properties()
    
+   categories = {}
+   
    for resourceId in ids:
        resource = Resource().get_by_key_name(resourceId)
-       logging.info(resource)
        if resource:
 	       resources[resourceId] = {
 	           'name': resource.name,
 	           'url': resource.wikiurl,
-	           'categories': resource.categories,
+	           'categories': resource.frontend_categories,
 	           'address': resource.address,
 	           'phone': resource.phone,
 	           'hours': resource.hours,
 	           'website': resource.website,
 	       }
+	       
+	       for cat in resource.frontend_categories:
+	           categories[cat] = cat
+	       
    
    template_values = {
        'json': simplejson.dumps({
@@ -936,6 +941,7 @@ class SavedMapHandler(webapp.RequestHandler):
        }),
        'resources': resources,
        'ids': ids,
+       'cats': ", ".join(categories.keys())
    }
    path = os.path.join(os.path.dirname(__file__), 'map.html')
    self.response.out.write(template.render(path, template_values))

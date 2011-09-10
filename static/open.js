@@ -588,6 +588,8 @@ OP.Map = (function () {
 	      	jsonp: 'jsonCallback',
 	      	success: me.receive
 	      });
+	      
+	    
 	};
 	
 	me.receive = function (data) {
@@ -602,43 +604,42 @@ OP.Map = (function () {
 		for (var i in data.table.rows) {
 			pos = data.table.rows[i][1].split(',');
 			
-			console.log(pos);
-			
-			lat = parseFloat(pos[0]);
-			long = parseFloat(pos[1]);
-			
-			if (latMax < lat) {
-				latMax = lat;
-			}
-			if (latMin > lat) {
-				latMin = lat;
-			}
-			
-			if (longMax < long) {
-				longMax = long;
-			}
-			if (longMin > long) {
-				longMin = long;
+			if (pos[0] !== 'None') {
+				lat = parseFloat(pos[0]);
+				long = parseFloat(pos[1]);
+				
+				if (latMax < lat) {
+					latMax = lat;
+				}
+				if (latMin > lat) {
+					latMin = lat;
+				}
+				
+				if (longMax < long) {
+					longMax = long;
+				}
+				if (longMin > long) {
+					longMin = long;
+				}
 			}
 		}
 		
-		sw = new google.maps.LatLng(latMin, longMin);
-		ne = new google.maps.LatLng(latMax, longMax);
-		bounds = new google.maps.LatLngBounds(sw, ne);
-		
-		console.log(bounds + '');
-		console.log(bounds);
-		
 		map = new google.maps.Map(document.getElementById('map'), {
 			center: sf_latlng,
-			zoom: 15,
+			zoom: 13,
 			disableDefaultUI: true,
 			draggable: false,
 			mapTypeId: 'roadmap',
 			scrollwheel: false
 		});
 		
-		map.fitBounds(bounds);
+		if (latMin !== 1000) {
+			sw = new google.maps.LatLng(latMin, longMin);
+			ne = new google.maps.LatLng(latMax, longMax);
+			bounds = new google.maps.LatLngBounds(sw, ne);
+			
+			map.fitBounds(bounds);
+		}
 			
 		ids = _data.ids.join(',');
 		whereClause = 'ID IN (' + ids + ')';
