@@ -25,7 +25,7 @@ OP.FusionMap = (function () {
                        ", LATLNG" + mapBounds.getNorthEast() + "))";
       }
   
-      var queryText = "SELECT 'Name','ID','GeocodedAddress','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + OP.FUSION_ID + whereClause;
+      var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + OP.FUSION_ID + whereClause;
       $.ajax({
       	url: 'http://www.google.com/fusiontables/api/query',
       	data: {sql: queryText},
