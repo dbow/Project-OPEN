@@ -67,6 +67,7 @@ h3 {
 	}
 	
 	.rail-options {
+		position: relative;
 		padding: 2px 0;
 	}
 	.rail-option {

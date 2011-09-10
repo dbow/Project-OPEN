@@ -496,11 +496,14 @@ OP.MyGuide = (function () {
 	};
 	
 	me.url = function (hash) {
-		return OP.SITE_ROOT + '/map?id=' + hash
+		return OP.SITE_ROOT + '/map?id=' + hash;
 	};
 	
 	me.link2 = function (hash) {
-		alert(me.url(hash));
+		$('.rail-option-copy').val(me.url(hash)).show().select();
+		$(document.body).one('click', function () {
+			$('.rail-option-copy').hide();
+		});
 	}
 	me.link = function () {
 		me.save(me.link2);
@@ -527,6 +530,10 @@ OP.MyGuide = (function () {
         $('.rail-option-link').click(me.link);
         $('.rail-option-email').click(me.email);
         $('.rail-option-print').click(me.print);
+        $('.rail-option-copy').click(function (event) {
+        	event.stopPropagation();
+        	$(this).select();
+        });
 	};
 	
 	return me;
@@ -549,7 +556,8 @@ OP.Map = (function () {
 		OP.MyGuide.email2(_hash);
 	};
 	
-	me.link = function () {
+	me.link = function (event) {
+		event.stopPropagation();
 		OP.MyGuide.link2(_hash);
 	};
 	
@@ -659,6 +667,10 @@ OP.Map = (function () {
 		$('.header-sub-option-print').click(me.print);
 		$('.header-sub-option-link').click(me.link);
 		$('.header-sub-option-email').click(me.email);
+		$('.rail-option-copy').click(function (event) {
+        	event.stopPropagation();
+        	$(this).select();
+        });
 	};
 	
 	return me;
@@ -765,7 +777,7 @@ OP.Util = (function () {
 	  }
 	}
 	
-	 me.copy = function (text) {
+	 me.copy = function (text) {	 
 	    var flashcopier = 'flashcopier';
 	    if(!document.getElementById(flashcopier)) {
 	      var divholder = document.createElement('div');
