@@ -25,7 +25,7 @@ OP.FusionMap = (function () {
                        ", LATLNG" + mapBounds.getNorthEast() + "))";
       }
   
-      var queryText = "SELECT 'Name','ID','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + OP.FUSION_ID + whereClause;
+      var queryText = "SELECT 'Name','ID','GeocodedAddress','Website','Address','Categories','Summary','Image','Wiki URL','DisplayFilter','FilterCategories' FROM " + OP.FUSION_ID + whereClause;
       $.ajax({
       	url: 'http://www.google.com/fusiontables/api/query',
       	data: {sql: queryText},
@@ -433,6 +433,7 @@ for (var i in _filtered) {
     
     me.receive = function (response) {
         _cache = response;
+        console.log(response);
         me.filter();
     };
     
@@ -534,7 +535,9 @@ OP.MyGuide = (function () {
 
 OP.Map = (function () {
 	var me = {},
-		_hash;
+	
+		_hash,
+		_data;
 	
 	me.print = function () {
 		$('body').addClass('print');
@@ -575,23 +578,76 @@ OP.Map = (function () {
 	
 	me.createStatic = function (data) {
 		_hash = data.url;
-
-		var map = new google.maps.Map(document.getElementById('map'), {
-				center: sf_latlng,
-				zoom: 13,
-				disableDefaultUI: true,
-				draggable: false,
-				mapTypeId: 'roadmap',
-				scrollwheel: false
-			}),
+		_data = data;
+		
+		var queryText = "SELECT 'ID','GeocodedAddress' FROM " + OP.FUSION_ID + " WHERE ID IN (" + data.ids.join(',') + ")";
+	      $.ajax({
+	      	url: 'http://www.google.com/fusiontables/api/query',
+	      	data: {sql: queryText},
+	      	dataType: 'jsonp',
+	      	jsonp: 'jsonCallback',
+	      	success: me.receive
+	      });
+	};
+	
+	me.receive = function (data) {
+		var pos, lat, long,
+			latMax = -1000, latMin = 1000, longMax = -1000, longMin = 1000,
+			sw, ne, bounds,
+			map, ids, whereClause, layer;
+		
+		console.log(data);
+		
+		// find bounds
+		for (var i in data.table.rows) {
+			pos = data.table.rows[i][1].split(',');
 			
-			ids = data.ids.join(',');	
+			console.log(pos);
+			
+			lat = parseFloat(pos[0]);
+			long = parseFloat(pos[1]);
+			
+			if (latMax < lat) {
+				latMax = lat;
+			}
+			if (latMin > lat) {
+				latMin = lat;
+			}
+			
+			if (longMax < long) {
+				longMax = long;
+			}
+			if (longMin > long) {
+				longMin = long;
+			}
+		}
+		
+		sw = new google.maps.LatLng(latMin, longMin);
+		ne = new google.maps.LatLng(latMax, longMax);
+		bounds = new google.maps.LatLngBounds(sw, ne);
+		
+		console.log(bounds + '');
+		console.log(bounds);
+		
+		map = new google.maps.Map(document.getElementById('map'), {
+			center: sf_latlng,
+			zoom: 15,
+			disableDefaultUI: true,
+			draggable: false,
+			mapTypeId: 'roadmap',
+			scrollwheel: false
+		});
+		
+		map.fitBounds(bounds);
+			
+		ids = _data.ids.join(',');
+		whereClause = 'ID IN (' + ids + ')';
 		
 		layer = new google.maps.FusionTablesLayer({
 			query: {
 				select: 'Address',
 				from: OP.FUSION_ID,
-				where: 'ID IN (' + ids + ')'
+				where: whereClause
 			}
 		});
 		

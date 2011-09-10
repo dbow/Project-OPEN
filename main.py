@@ -913,20 +913,19 @@ class SavedMapHandler(webapp.RequestHandler):
    
    properties = Resource().properties()
    
-   logging.info('kyle')
-   logging.info(properties)
-   
    for resourceId in ids:
-       resource = Resource().get_by_key_name(resourceId);
-       resources[resourceId] = {
-           'name': resource.name,
-           'url': resource.wikiurl,
-           'categories': resource.categories,
-           'address': resource.address,
-           'phone': resource.phone,
-           'hours': resource.hours,
-           'website': resource.website,
-       }
+       resource = Resource().get_by_key_name(resourceId)
+       logging.info(resource)
+       if resource:
+	       resources[resourceId] = {
+	           'name': resource.name,
+	           'url': resource.wikiurl,
+	           'categories': resource.categories,
+	           'address': resource.address,
+	           'phone': resource.phone,
+	           'hours': resource.hours,
+	           'website': resource.website,
+	       }
    
    template_values = {
        'json': simplejson.dumps({
