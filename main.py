@@ -1014,7 +1014,7 @@ class SetStaticHandler(webapp.RequestHandler):
         static_pages = StaticContent().all()
         page = static_pages.filter('page_url = ', url).get()
         if not page:
-          page = StaticContent(page_url=page)
+          page = StaticContent(page_url=url)
         page.page_content = static_dict[url]
         page.put()
       self.redirect('/admin/static')

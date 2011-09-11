@@ -6,11 +6,14 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pr
 
 /* main */
 html, body {
-    position: absolute;
     margin: 0;
     padding: 0;
     width: 100%;
-    min-height: 100%;
+    height: 100%;
+    background: #F5F4EB;
+    font-family: "Trebuchet MS", sans-serif;
+    font-size: 12px;
+    color: #000;
 }
 
 
@@ -27,10 +30,7 @@ html, body {
 .DIN-reg { font-family: "DIN-Regular", sans-serif }
 
 body {
-    background: #F5F4EB;
-    font-family: "Trebuchet MS", sans-serif;
-    font-size: 12px;
-    color: #000;
+
 }
 
 .ui-impr {

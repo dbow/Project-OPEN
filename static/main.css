@@ -13,15 +13,31 @@ h3 {
     position: relative;
     margin: 0 auto;
     width: 1000px;
+    background: #fff;
+    height: auto !important; /* real browsers */
+    height: 100%; /* IE6: treaded as min-height*/
+    min-height: 100%; /* real browsers */
+    outline: 1px solid #ccc;
 }
+	#header {
+		position: absolute;
+		z-index: 3;
+		width: 100%;
+	}
     #subpage {
-        position: relative;
         z-index: 2;
-        outline: 1px solid #ccc;
-        background: #fff;
         overflow: hidden;
-        min-height: 100%;
     }
+    	#subpage-i {
+    		position: relative;
+    		margin-top: 40px;
+    	}
+
+	#footer {
+		position: absolute;
+		width: 100%;
+		height: 2px;
+	}
 
 #rail {
     position: relative;
