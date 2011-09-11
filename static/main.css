@@ -192,7 +192,6 @@ h3 {
     	.filters-label {
     		float: left;
     		margin-right: 7px;
-    		font-weight: bold;
     		font-size: 10px;
     		text-transform: uppercase;
     	}
@@ -240,7 +239,6 @@ h3 {
     	.cats-header {
     		margin: 10px 0;
     		text-transform: uppercase;
-    		font-weight: bold;
     	}
     	#cats .cat-all {
     		float: left;
@@ -314,6 +312,9 @@ h3 {
 	    .table-name {
 	    	font-size: 18px;
 	    	text-transform: uppercase;
+	    }
+	    .table-name a {
+	    	font-weight: normal;
 	    }
 	    .table-services {
 	    	color: #666;
