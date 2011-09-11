@@ -2,7 +2,7 @@ var OP = {};
 
 (function () {
 
-OP.SITE_ROOT = location.origin; //'http://project-open.appspot.com';
+OP.SITE_ROOT = location.protocol + '//' + location.host; //location.origin; //'http://project-open.appspot.com';
 OP.WIKI_URL = 'http://sfhomeless.wikia.com/wiki/';
 OP.FUSION_ID = 1293272;
 

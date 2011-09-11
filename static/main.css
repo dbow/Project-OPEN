@@ -148,6 +148,9 @@ h3 {
 		.rail-guide-entry > div {
 			margin-bottom: 5px;
 		}
+		.rail-guide-entry .table-toggle {
+			display: none;
+		}
 	
     #about {
         margin-top: 10px;
@@ -176,7 +179,7 @@ h3 {
     #filters-main {
     	height: 36px;
     	padding: 12px 40px;
-    	-webkit-box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    	box-shadow: 0 1px 4px rgba(0,0,0,0.4);
     }
     	.filters-field {
     		float: left;
@@ -189,7 +192,6 @@ h3 {
     	.filters-label {
     		float: left;
     		margin-right: 7px;
-    		font-weight: bold;
     		font-size: 10px;
     		text-transform: uppercase;
     	}
@@ -237,7 +239,6 @@ h3 {
     	.cats-header {
     		margin: 10px 0;
     		text-transform: uppercase;
-    		font-weight: bold;
     	}
     	#cats .cat-all {
     		float: left;
@@ -256,7 +257,7 @@ h3 {
         	width: 16px;
         	margin-right: 10px;
         	border: 1px solid #eee;
-        	-webkit-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) inset;
+        	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) inset;
         }
         #cats .cat.on .cat-box {
      		background: #ddd;
@@ -312,6 +313,9 @@ h3 {
 	    	font-size: 18px;
 	    	text-transform: uppercase;
 	    }
+	    .table-name a {
+	    	font-weight: normal;
+	    }
 	    .table-services {
 	    	color: #666;
 	    	font-style: italic;
@@ -329,7 +333,7 @@ h3 {
 	    	color: #666;
 	    	margin-top: 15px;
 	    	padding: 15px 0 15px 170px;
-	    	-webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3) inset;
+	    	box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3) inset;
 	    }
     
     #table .info {
@@ -340,7 +344,7 @@ h3 {
     	width: 400px;
     	border: 1px solid #666;
     	background: #fff;
-    	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    	box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
     #table .directions {
     	width: 70px;
@@ -355,7 +359,7 @@ h3 {
     	height: 140px;
     	border: 1px solid #666;
     	background: #fff;
-    	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    	box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
     }
     #table .invisible {

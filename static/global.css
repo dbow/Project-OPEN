@@ -123,5 +123,5 @@ a:visited {
 	font-size: 12px;
 	line-height: 20px;
 	width: 200px;
-	-webkit-box-shadow: 0 0 3px #000;
+	box-shadow: 0 0 3px #000;
 }
