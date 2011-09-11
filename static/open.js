@@ -2,7 +2,7 @@ var OP = {};
 
 (function () {
 
-OP.SITE_ROOT = 'http://project-open.appspot.com';
+OP.SITE_ROOT = location.origin; //'http://project-open.appspot.com';
 OP.WIKI_URL = 'http://sfhomeless.wikia.com/wiki/';
 OP.FUSION_ID = 1293272;
 
@@ -18,6 +18,7 @@ OP.FusionMap = (function () {
 		  _listener;
     
     me.changeData = function () {
+
       var whereClause = "";
 
       var mapBounds = map.getBounds();
@@ -63,10 +64,11 @@ OP.FusionMap = (function () {
     };
     
     me.updateLayer = function (ids) {
+
       var queryParams = {
-          select: 'Address',
-          from: OP.FUSION_ID,
-        }
+        select: 'Address',
+        from: OP.FUSION_ID,
+      };
       if (ids != 'all') {
         var idString = '0';
         if (ids.length) {
@@ -81,14 +83,8 @@ OP.FusionMap = (function () {
         var whereString = 'ID IN (' + idString + ')';     
         queryParams.where = whereString;
       }
-      
-      // TODO(dbow): After the first time the layer is set, the styling does
-      // not show up in the map (though the stylizeLayer function seems to
-      // be running correctly).  Need to figure this out.
       if (layer) {
         layer.setMap(null);
-        google.maps.event.removeListener(_listener);
-        layer = null;
       }
       layer = new google.maps.FusionTablesLayer({
         query: queryParams,
@@ -119,14 +115,16 @@ OP.FusionMap = (function () {
           }
         }]
       });
-      layer.setMap(map);
       me.stylizeLayer(layer);
+      layer.setMap(map);
     };
     
     me.stylizeLayer = function (layer) {
+
       // add a click listener to the layer, so we can customize the info window
       // when it's displayed.
       _listener = google.maps.event.addListener(layer, 'click', function(e) {
+
         //update the content of the InfoWindow
         e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
                            e.row['Name'].value + '</div>';
@@ -323,10 +321,7 @@ OP.Data = (function () {
     };
     
     me.performSearch = function () {
-      console.log('search');
-      console.log(_cache.table.rows.length);
-      console.log(_filtered.length);
-      console.log(_results.length);
+
       var rows = _filtered,
           search = $("#search-box"),
           _table = $("#table").html(''),
@@ -358,26 +353,16 @@ OP.Data = (function () {
         }
       }
       
-      console.log('end');
-      console.log(_cache.table.rows.length);
-      console.log(_filtered.length);
-      console.log(_results.length);
-      
       $("#table").show();
       OP.Util.setHeights();
-      console.log('ids');
-      console.log(_ids.length);
       if (_results.length == _cache.table.rows.length) {
         _ids = 'all';
       }
+
       OP.FusionMap.updateLayer(_ids);
     };
     
     me.filter = function () {
-      console.log('filter');
-      console.log(_cache.table.rows.length);
-      console.log(_filtered.length);
-      console.log(_results.length);
     	var rows = _cache.table.rows,
     	  cats = OP.Util.toArrayKeys(OP.Cats.getSelected()),
     		_table = $("#table").html(''),
@@ -539,7 +524,6 @@ for (var i in _filtered) {
     
     me.receive = function (response) {
         _cache = response;
-        console.log(response);
         me.filter();
     };
     
