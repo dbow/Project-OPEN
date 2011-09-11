@@ -16,17 +16,12 @@ handlers:
   script: main.py
   login: admin
 
-- url: /wikisync.*
-  script: main.py
-  login: admin
-
-- url: /fusion.*
-  script: main.py
-  login: admin
-
-- url: /category.*
+- url: /admin.*
   script: main.py
   login: admin
 
 - url: .*
   script: main.py
+
+builtins:
+- datastore_admin: on

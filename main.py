@@ -384,18 +384,6 @@ def syncResource(resource_page, resource_id=None):
       if 'San Francisco' not in address:
         address += ' San Francisco, CA'
       resource.address = address.decode('utf-8')
-      geo_url = GEOCODE_URL + urllib.quote(resource.address.encode('utf-8'))
-      http = httplib2.Http()
-      response, content = http.request(geo_url, 'GET')
-      response_xml = parseString(content)
-      status = response_xml.getElementsByTagName('status')[0].childNodes[0]
-      logging.info('geocoding status: ' + status.data)
-      if status.data == 'OK':
-        lat_element = response_xml.getElementsByTagName('lat')[0]
-        lng_element = response_xml.getElementsByTagName('lng')[0]
-        lat = lat_element.childNodes[0].data
-        lng = lng_element.childNodes[0].data
-        resource.geocoded_address = db.GeoPt(float(lat), float(lng))
       resource.status = 'Active'
     else:
       resource.status = 'Incomplete'
@@ -475,9 +463,9 @@ def updateFusionTableRow(wikiurl):
   image = 'False'
   if resource.image:
     image = 'True'
-  row_id = resource.key().id()
-  logging.info(row_id)
-  row_info = {'Name': resource.name.encode('utf-8'),
+  row_id = resource.key().name()
+  row_info = {'ID': str(row_id),
+              'Name': resource.name.encode('utf-8'),
               'Address': resource.address.encode('utf-8'),
               'GeocodedAddress': str(resource.geocoded_address),
               'Categories': ', '.join(categories),
@@ -493,6 +481,8 @@ def updateFusionTableRow(wikiurl):
               'Languages': language.encode('utf-8'),
               'Image': image,
               'Last Updated': resource.last_updated.strftime(tfmt)}
+  if resource.geocoded_address:
+    row_info['GeocodedAddress'] = str(resource.geocoded_address)
   row_query = "'Wiki URL' = '" + wikiurl + "'"
   response = oauth_client.query(SQL().select(FUSION_TABLE_ID,
                                              ['ROWID','Name','ID'],
@@ -504,6 +494,8 @@ def updateFusionTableRow(wikiurl):
     row_info['ID'] = str(row_id)
     insert = oauth_client.query(SQL().insert(FUSION_TABLE_ID, row_info))
     logging.info(insert)
+    if insert != 'OK':
+      raise EnvironmentError(insert)
 
   else:
     logging.info('update')
@@ -512,7 +504,7 @@ def updateFusionTableRow(wikiurl):
                                              row_info.keys(),
                                              row_info.values(),
                                              fusion_row_id))
-    if update != 'OK':
+    if update.rstrip() != 'OK':
       raise EnvironmentError(update)
 
 
@@ -539,6 +531,56 @@ class WikiSyncLauncher(webapp.RequestHandler):
     for page in resource_pages:
       taskqueue.add(url='/task/wikisync', params={'resource_id': page[0],
                                                   'resource_page': page[1]})
+      num += 1
+    self.response.out.write(str(num) + ' tasks launched.')
+
+
+class GeocodingSyncTaskHandler(webapp.RequestHandler):
+  """TODO."""
+
+  def post(self):
+    """TODO."""
+
+    resource_id = self.request.get('resource_id')
+    resource = Resource().get_by_key_name(resource_id)
+    if resource:
+      geo_url = GEOCODE_URL + urllib.quote(resource.address.encode('utf-8'))
+      http = httplib2.Http()
+      response, content = http.request(geo_url, 'GET')
+      response_xml = parseString(content)
+      status = response_xml.getElementsByTagName('status')[0].childNodes[0]
+      logging.info('geocoding status: ' + status.data)
+      if status.data == 'OK':
+        lat_element = response_xml.getElementsByTagName('lat')[0]
+        lng_element = response_xml.getElementsByTagName('lng')[0]
+        lat = lat_element.childNodes[0].data
+        lng = lng_element.childNodes[0].data
+        resource.geocoded_address = db.GeoPt(float(lat), float(lng))
+        resource.put()
+      elif status.data == 'ZERO_RESULTS':
+        logging.info(str('resource ' + resource.key().name() +
+                         ' failed to geocode with this address: ' +
+                         resource.address))
+        #resource.status = 'Incomplete'
+        #resource.put()
+      else:
+        time.sleep(2)
+        raise EnvironmentError(status.data)
+
+
+class GeocodingSyncLauncher(webapp.RequestHandler):
+  """TODO."""
+
+  def get(self):
+    """TODO."""
+
+    resources = Resource().all().filter('address != ', None)
+    nongeo_resources = resources.filter('geocoded_address = ', None)
+    num = 0
+    for resource in nongeo_resources:
+      taskqueue.add(url='/task/geosync',
+                    queue_name='geo',
+                    params={'resource_id': resource.key().name()})
       num += 1
     self.response.out.write(str(num) + ' tasks launched.')
 
@@ -576,7 +618,7 @@ class FusionTablesCredentialsHandler(webapp.RequestHandler):
       oauth_credentials.token = token
       oauth_credentials.secret = secret
       oauth_credentials.put()
-      self.redirect('/fusionsync')
+      self.redirect('/admin/fusionsync')
 
 
 class FusionTablesSyncHandler(webapp.RequestHandler):
@@ -608,7 +650,9 @@ class FusionTablesSyncLauncher(webapp.RequestHandler):
       for resource in resources:
         if resource.wikiurl:
           wikiurl = resource.wikiurl.encode('utf-8')
-          taskqueue.add(url='/task/fusionsync', params={'wikiurl': wikiurl})
+          taskqueue.add(url='/task/fusionsync',
+                        queue_name='fusion',
+                        params={'wikiurl': wikiurl})
           num += 1
       self.response.out.write(str(num) + ' tasks launched.')
 
@@ -656,7 +700,7 @@ class WikiStatusHandler(webapp.RequestHandler):
 
     end = quota.get_request_cpu_usage()
     logging.info('post request cost %d megacycles.' % (end - start))
-    self.redirect('/wikistatus')
+    self.redirect('/admin/wikistatus')
 
 
 class CategoryImageUploader(webapp.RequestHandler):
@@ -674,7 +718,7 @@ class CategoryImageUploader(webapp.RequestHandler):
                               '</option>')      
       
     self.response.out.write("""
-          <form action="/categoryimage" enctype="multipart/form-data" method="post">
+          <form action="/admin/categoryimage" enctype="multipart/form-data" method="post">
             <div><label>Category:</label></div>
             <div><select name="category">""" + category_selects +
             """"</select></div>
@@ -1027,18 +1071,20 @@ def main():
          ('/about', StaticHandler),
          ('/contact', StaticHandler),
          ('/faq', StaticHandler),
-         ('/admin/static', SetStaticHandler), #TODO(dbow): make admin-only.
          ('/image', GetImage),
          ('/save', SaveHandler),
          ('/map', SavedMapHandler),
-         ('/wikistatus', WikiStatusHandler),  #TODO(dbow): make admin-only.
-         ('/category', CategorySyncLauncher),  #admin-only.
-         ('/categoryimage', CategoryImageUploader), #admin-only.
+         ('/admin/static', SetStaticHandler), #admin-only.
+         ('/admin/wikistatus', WikiStatusHandler),  #admin-only.
+         ('/admin/category', CategorySyncLauncher),  #admin-only.
+         ('/admin/categoryimage', CategoryImageUploader), #admin-only.
          ('/task/category', CategorySyncTaskHandler), #admin-only.
-         ('/wikisync', WikiSyncLauncher),  #admin-only.
+         ('/admin/wikisync', WikiSyncLauncher),  #admin-only.
          ('/task/wikisync', WikiSyncTaskHandler),  #admin-only.
-         ('/fusioncredentials', FusionTablesCredentialsHandler),  #admin-only.
-         ('/fusionsync', FusionTablesSyncLauncher),  #admin-only.
+         ('/admin/geosync', GeocodingSyncLauncher),   #admin-only.
+         ('/task/geosync', GeocodingSyncTaskHandler),   #admin-only.
+         ('/admin/fusioncredentials', FusionTablesCredentialsHandler),  #admin-only.
+         ('/admin/fusionsync', FusionTablesSyncLauncher),  #admin-only.
          ('/task/fusionsync', FusionTablesSyncHandler)],  #admin-only.
         debug=True)
     util.run_wsgi_app(application)
