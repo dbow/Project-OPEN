@@ -179,7 +179,9 @@ h3 {
     #filters-main {
     	height: 36px;
     	padding: 12px 40px;
+    	box-shadow: 0 1px 4px rgba(0,0,0,0.4);
     	-webkit-box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    	-moz-box-shadow: 0 1px 4px rgba(0,0,0,0.4);
     }
     	.filters-field {
     		float: left;
@@ -259,7 +261,9 @@ h3 {
         	width: 16px;
         	margin-right: 10px;
         	border: 1px solid #eee;
+        	box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) inset;
         	-webkit-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) inset;
+        	-moz-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3) inset;
         }
         #cats .cat.on .cat-box {
      		background: #ddd;
@@ -332,7 +336,9 @@ h3 {
 	    	color: #666;
 	    	margin-top: 15px;
 	    	padding: 15px 0 15px 170px;
+	    	box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3) inset;
 	    	-webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3) inset;
+	    	-moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.3) inset;
 	    }
     
     #table .info {
@@ -343,7 +349,9 @@ h3 {
     	width: 400px;
     	border: 1px solid #666;
     	background: #fff;
+    	box-shadow: 0 0 5px rgba(0,0,0,0.5);
     	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    	-moz-box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
     #table .directions {
     	width: 70px;
@@ -358,7 +366,9 @@ h3 {
     	height: 140px;
     	border: 1px solid #666;
     	background: #fff;
+    	box-shadow: 0 0 5px rgba(0,0,0,0.5);
     	-webkit-box-shadow: 0 0 5px rgba(0,0,0,0.5);
+    	-moz-box-shadow: 0 0 5px rgba(0,0,0,0.5);
     }
     }
     #table .invisible {
