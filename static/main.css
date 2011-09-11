@@ -148,6 +148,9 @@ h3 {
 		.rail-guide-entry > div {
 			margin-bottom: 5px;
 		}
+		.rail-guide-entry .table-toggle {
+			display: none;
+		}
 	
     #about {
         margin-top: 10px;
