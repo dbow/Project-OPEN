@@ -1,7 +1,7 @@
 #header-sub {
 	padding: 10px 0 10px;
 	background: #fff;
-	-webkit-box-shadow: 0 0 6px #000; 
+	box-shadow: 0 0 6px #000;
 }
 	.header-sub-inner {
 		margin: 0 auto;
@@ -50,7 +50,7 @@
 	width: 720px; /* TODO: ppi issues */
 	/* height: 1250px; */
 	background: #fff;
-	-webkit-box-shadow: 0 0 6px #000;
+	box-shadow: 0 0 6px #000;
 }
 	#map {
 		/* display: none; */
@@ -88,5 +88,5 @@
 	margin: 0;
 	padding: 0;
 	height: auto;
-	-webkit-box-shadow: none;
+	box-shadow: none;
 }
