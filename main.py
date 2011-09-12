@@ -494,8 +494,6 @@ def updateFusionTableRow(wikiurl):
     row_info['ID'] = str(row_id)
     insert = oauth_client.query(SQL().insert(FUSION_TABLE_ID, row_info))
     logging.info(insert)
-    if insert != 'OK':
-      raise EnvironmentError(insert)
 
   else:
     logging.info('update')
@@ -908,7 +906,8 @@ class GetImage(webapp.RequestHandler):
     wikiurl = self.request.get('wikiurl')
     filter_name = self.request.get('filter')
     if wikiurl:
-      resource = Resource().all().filter('wikiurl =', wikiurl).get()
+      decoded_url = wikiurl.decode('utf-8').replace("'", "%27")
+      resource = Resource().all().filter('wikiurl =', decoded_url).get()
       if resource and resource.image:
         self.response.headers['Content-Type'] = 'image/jpeg'
         self.response.out.write(resource.image)

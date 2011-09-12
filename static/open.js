@@ -439,7 +439,7 @@ OP.Data = (function () {
           websiteHTML = '',
           summaryHTML = '',
           showMoreInfo = '',
-          imageInfo = '';  //'<img class="table-img" src="/image?filter=' + displayFilter + '"/>';
+          imageInfo = '<img class="table-img" src="/image?filter=' + displayFilter + '"/>';
 
       if (website != 'None') {
         websiteHTML = '<div class="cell table-link"><a target="_blank" href="'+
@@ -453,11 +453,9 @@ OP.Data = (function () {
         showMoreInfo = '<div class="table-toggle">More Information</div>';
       }
 
-      /*
-      // TODO(dbow): Temporarily removing images to speed frontend rendering.
       if (image == 'True') {
-        imageInfo = '<img class="table-img" src="/image?wikiurl=' + wikiURL + '" />';
-      } */
+        imageInfo = '<img class="table-img" src="/image?wikiurl=' + resourceURL + '" />';
+      }
 
     	rowHTML = $(
     	'<div class="row clearfix" id="' + id + '">' +
