@@ -975,6 +975,50 @@ class SavedMapHandler(webapp.RequestHandler):
 	       for cat in resource.frontend_categories:
 	           categories[cat] = cat
 	       
+   # resources = {
+#        '2': {
+#            'name': 'Fake Place That is really awesome and good all the time',
+#            'url': 'http://kylejwarren.com',
+#            'categories': ['Fun Times', 'Good Times', 'Excellent Monster Parties', 'What is this meaning?', 'What?!', 'OKay', 'Funzio'],
+#            'address': '216 Steiner, DreamStation Way\n WWEEEE',
+#            'phone': '80569853679',
+#            'hours': "2-4pm Friday\n3-3pm Whenday",
+#            'website': 'http://thebrosen.com'
+#        },
+#        '3': {
+#            'name': 'Fake Place',
+#            'url': 'http://kylejwarren.com',
+#            'categories': ['Fun Times', 'Good Times'],
+#            'address': '216 Steiner, DreamStation Way\n WWEEEE',
+#            'phone': '80569853679',
+#            'hours': '2-4pm Friday',
+#            'website': 'http://thebrosen.com'
+#        },
+#        '4': {
+#            'name': 'Fake Place',
+#            'url': 'http://kylejwarren.com',
+#            'categories': ['Fun Times', 'Good Times'],
+#            'address': '216 Steiner, DreamStation Way\n WWEEEE',
+#            'phone': '80569853679',
+#            'hours': '2-4pm Friday',
+#            'website': 'http://thebrosen.com'
+#        },
+#        '5': {
+#            'name': 'Fake Place',
+#            'url': 'http://kylejwarren.com',
+#            'categories': ['Fun Times', 'Good Times'],
+#            'address': '216 Steiner, DreamStation Way\n WWEEEE',
+#            'phone': '80569853679',
+#            'hours': '2-4pm Friday',
+#            'website': 'http://thebrosen.com'
+#        }
+#    }
+   
+   resources1 = resources.items()
+   length = len(resources1)
+   half = int(length / 2)
+   resources2 = resources1[half : length]
+   resources1 = resources1[0 : half]
    
    template_values = {
        'json': simplejson.dumps({
@@ -983,7 +1027,8 @@ class SavedMapHandler(webapp.RequestHandler):
            'name': saved_map.name,
            'url': saved_map.url,
        }),
-       'resources': resources,
+       'resources': resources1,
+       'resources2': resources2,
        'ids': ids,
        'cats': ", ".join(categories.keys())
    }

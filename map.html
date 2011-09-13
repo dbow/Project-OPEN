@@ -61,19 +61,36 @@
 			<div id="map"></div>
 			
 			<div class="resources">
-				{% for id, resource in resources.items %}
-					<div class="resource">
-						{% for prop, val in resource.items %}
-							{% if val %}
-								{% if prop == 'categories' %}
-									<div class="resource-prop-{{prop}}">{{ val|join:', ' }}</div>
-								{% else %}
-									<div class="resource-prop-{{prop}}">{{val}}</div>
+				<div class="resource-col">
+					{% for id, resource in resources %}
+						<div class="resource">
+							{% for prop, val in resource.items %}
+								{% if val %}
+									{% if prop == 'categories' %}
+										<div class="resource-prop-{{prop}}">{{ val|join:', ' }}</div>
+									{% else %}
+										<div class="resource-prop-{{prop}}">{{val}}</div>
+									{% endif %}
 								{% endif %}
-							{% endif %}
-						{% endfor %}
-					</div>
-				{% endfor %}
+							{% endfor %}
+						</div>
+					{% endfor %}
+				</div>
+				<div class="resource-col">
+					{% for id, resource in resources2 %}
+						<div class="resource">
+							{% for prop, val in resource.items %}
+								{% if val %}
+									{% if prop == 'categories' %}
+										<div class="resource-prop-{{prop}}">{{ val|join:', ' }}</div>
+									{% else %}
+										<div class="resource-prop-{{prop}}">{{val}}</div>
+									{% endif %}
+								{% endif %}
+							{% endfor %}
+						</div>
+					{% endfor %}
+				</div>
 			</div>
 		</div>
 	</body>

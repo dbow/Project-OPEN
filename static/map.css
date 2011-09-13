@@ -19,6 +19,9 @@
 			font-size: 12px;
 			color: #666;
 			font-style: italic;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
 		}
 		
 	.header-sub-options {
@@ -58,21 +61,36 @@
 		height: 900px;
 	}
 	
-	.resource {
+	.resource-col {
 		float: left;
-		width: 230px;
+		width: 338px;
+		border-left: 1px solid #bbb;
+	}
+	
+	/*
+.resource {
+		float: left;
+		width: 219px;
 		height: 150px;
 		padding: 10px;
 		border: 1px solid #bbb;
 		border-width: 1px 0 0 1px;
 		overflow: hidden;
 	}
+*/
+	.resource {
+		float: left;
+		padding: 10px;
+		font-size: 16px;
+		color: #333;
+	}
 		.resource-prop-url {
 			display: none;
 		}
 		.resource-prop-name {
-			font-size: 20px;
+			font-size: 22px;
 			font-weight: bold;
+			color: #000;
 		}
 		.resource > div {
 			margin-bottom: 5px;
