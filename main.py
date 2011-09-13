@@ -483,6 +483,7 @@ def updateFusionTableRow(wikiurl):
               'Last Updated': resource.last_updated.strftime(tfmt)}
   if resource.geocoded_address:
     row_info['GeocodedAddress'] = str(resource.geocoded_address)
+
   row_query = "'Wiki URL' = '" + wikiurl + "'"
   response = oauth_client.query(SQL().select(FUSION_TABLE_ID,
                                              ['ROWID','Name','ID'],

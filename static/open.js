@@ -2,7 +2,7 @@ var OP = {};
 
 (function () {
 
-OP.SITE_ROOT = location.protocol + '//' + location.host; //location.origin; //'http://project-open.appspot.com';
+OP.SITE_ROOT = location.protocol + '//' + location.host;
 OP.WIKI_URL = 'http://sfhomeless.wikia.com/wiki/';
 OP.FUSION_ID = 1293272;
 
@@ -10,13 +10,21 @@ var map;
 var initialBounds;
 var sf_latlng = new google.maps.LatLng(37.77493,-122.419416);
 
+/**
+ * The namespace for code creating and updating the main resource map, which
+ * includes a FusionTablesLayer.
+ */
 OP.FusionMap = (function () {
 
     var me = {},
       layer,
 		  _targetLocation,
 		  _listener;
-    
+
+    /**
+     * Retrieves all FusionTables resources within the current map bounds, and
+     * then calls OP.Data.receive with the results.
+     */
     me.changeData = function () {
 
       var whereClause = "";
@@ -40,7 +48,11 @@ OP.FusionMap = (function () {
       	success: OP.Data.receive
       });
     };
-    
+
+    /**
+     * Creates a map centered on San Francisco, with a FusionTablesLayer, and
+     * an event listener when the map goes idle that calls changeData.
+     */
     me.createMap = function () {
 
       map = new google.maps.Map(document.getElementById('map'), {
@@ -63,6 +75,11 @@ OP.FusionMap = (function () {
       
     };
     
+    /**
+     * Updates the FusionTablesLayer on the map to include the currently
+     * filtered set of resources.
+     * @param {Array.<string>} ids A list of resource IDs.
+     */
     me.updateLayer = function (ids) {
 
       var queryParams = {
@@ -72,9 +89,9 @@ OP.FusionMap = (function () {
       if (ids != 'all') {
         var idString = '0';
         if (ids.length) {
-          // Very broad queries can generate URIs that are too large
-          // so only the first ~160 or so IDs are submitted.
-          // TODO(dbow): Figure out a better solution for this.
+          // TODO(dbow): Figure out a better solution for this:
+          //   Very broad queries can generate URIs that are too large
+          //   so only the first ~160 or so IDs are submitted.
           if (ids.length > 170) {
             ids = ids.slice(0,169);
           }
@@ -88,7 +105,8 @@ OP.FusionMap = (function () {
       }
       layer = new google.maps.FusionTablesLayer({
         query: queryParams,
-        // FusionTablesLayer only supports up to 5 custom styles...
+        // TODO(dbow): Figure out a better solution for this:
+        //   FusionTablesLayer only supports up to 5 custom styles...
         styles: [{
           markerOptions: {
             iconName: "measle_white"
@@ -118,7 +136,11 @@ OP.FusionMap = (function () {
       me.stylizeLayer(layer);
       layer.setMap(map);
     };
-    
+
+    /**
+     * Sets the styling for the InfoWindow of the provided FusionTablesLayer.
+     * @param {google.maps.FusionTablesLayer} layer A FusionTablesLayer to style.
+     */
     me.stylizeLayer = function (layer) {
 
       // add a click listener to the layer, so we can customize the info window
@@ -149,7 +171,11 @@ OP.FusionMap = (function () {
         }
       });
     };
-    
+
+    /**
+     * Geolocates the provided string and updates the map to frame that location.
+     * @param {string} location A query string representing an address.
+     */
     me.updateMap = function (location) {
       
       if (location == "Current location") {
@@ -193,6 +219,10 @@ OP.FusionMap = (function () {
       }      
     };
     
+    /**
+     * Alerts the user if GeoLocation failed and sets map center to a default location.
+     * @param {boolean} errorFlag A boolean indicating if a specific error was returned.
+     */
     me.handleNoGeolocation = function (errorFlag) {
       if (errorFlag == true) {
         console.log("Geolocation service failed.");
@@ -204,7 +234,10 @@ OP.FusionMap = (function () {
             "Please provide a specific address.");
       map.setCenter(_targetLocation);
     };
-    
+
+    /**
+     * Creates the map and sets up the event handler for location searches.
+     */
     me.setUp = function () {
       me.createMap();
       $('#location').submit(function() {
@@ -359,6 +392,7 @@ OP.Data = (function () {
         _ids = 'all';
       }
 
+      me.updateLocationLinks();
       OP.FusionMap.updateLayer(_ids);
     };
     
@@ -461,13 +495,16 @@ OP.Data = (function () {
     	'<div class="row clearfix" id="' + id + '">' +
     		'<div class="clearfix">' +
     			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
-      		imageInfo +
+    			  '<div class="table-img-container">' +
+      		  imageInfo +
+      		  '</div>' +
       		'<div class="table-cells">' +
         		'<div class="cell table-name DIN-bold">' +
         		'<a target="_blank" href="'+ OP.WIKI_URL + resourceURL + '">' +
         		name + '</a></div>' +
         		'<div class="cell table-services">' + categories + '</div>' +
-        		'<div class="cell table-address">' + address + '</div>' +
+        		'<div class="cell table-address">' + address +
+        		' <a href="#" class="table-address-update">Go Here</a></div>' +
         		websiteHTML +
         		showMoreInfo +
       		'</div>' +
@@ -477,6 +514,14 @@ OP.Data = (function () {
     	).data('id', id).appendTo(_table);
 
     };
+    
+    me.updateLocationLinks = function () {
+      $('a.table-address-update').click(function(e) {
+        e.preventDefault();
+        var address = $(this).parent().text().replace('Go Here','');
+        OP.FusionMap.updateMap(address);
+      });
+    }
     
     me.print = function () {
     	var win = window.open('', 'Print'),
