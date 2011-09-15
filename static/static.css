@@ -1,21 +1,63 @@
 .static {
   margin-top:50px;
   margin-left:150px;
-  color: #999999;
+  color: #333;
   font-size: 16px;
   width:600px;
 }
 
 .static h2 {
-  font-family: "DIN-Regular", sans-serif;
-  font-size: 24px;
-  margin-bottom: 7px;
+  font-family: "DIN-Bold", sans-serif;
+  font-size: 22px;
+  margin-bottom: 25px;
+  margin-top: 40px;
   color:black;
 }
 
 .static h4 {
   font-family: "DIN-Bold", sans-serif;
   margin-bottom:7px;
-  margin-top:7px;
+  font-size: 18px;
   color:black;
+}
+
+.about-summary p {
+  margin-bottom: 25px;
+}
+
+.about-container {
+  display: block;
+  margin-bottom:20px;
+  width: 600px;
+  height: 215px;
+}
+
+.about-image {
+  float:left;
+  margin-right: 25px;
+}
+
+.about-image-description {
+  float: left;
+  width:400px;
+  padding-bottom:20px;
+}
+
+.about-image-description-first {
+  margin-top: 15px;
+}
+
+.faq-container {
+  margin-bottom: 40px;
+}
+
+.faq-container ol {
+  list-style-type: decimal;
+}
+
+.faq-container li {
+  list-style-type: decimal;
+  margin-left: 40px;
+  margin-top: 5px;
+  margin-bottom: 5px;
 }
