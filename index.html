@@ -1,10 +1,21 @@
 <!doctype html>
 <html>
 	<head>
-		<title>ProjectOPEN San Francisco</title>
+		<title>projectOPEN San Francisco | A BRUTE LABS Initiative</title>
+		<meta name="description" content="projectOPEN connects the community to resources in San Francisco." />
+
+		<meta property="og:title" content="projectOPEN San Francisco | A BRUTE LABS Initiative" />
+		<meta property="og:description" content="projectOPEN connects the community to resources in San Francisco." />
+        <meta property="og:image" content="http://www.projectopensf.org/static/img/myguidemap.png" />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="http://www.projectopensf.org" />
+        <meta property="og:site_name" content="projectOPEN San Francisco" />
+        <meta property="fb:admins" content="1000470,"/>
+
 		<link type="text/css" rel="stylesheet" href="static/global.css" />
 		<link type="text/css" rel="stylesheet" href="static/main.css" />
-		<script type="text/javascript">
+
+		<script type="text/javascript"> // Google Analytics code
 
 		  var _gaq = _gaq || [];
 		  _gaq.push(['_setAccount', 'UA-25628577-1']);
@@ -17,11 +28,34 @@
 		  })();
 
 		</script>
+
+		<script type="text/javascript"> // Google+ button code
+		  (function() {
+		    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+		    po.src = '//apis.google.com/js/plusone.js';
+		    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+		  })();
+		</script>
+
 	</head>
 	<body>
 		<div id="page">
 			<div id="header" class="clearfix">
-				<h1><a href="/main"><img alt="projectOPEN" src="/static/img/projectopen.png" /></a></h1>
+
+				<h1><a href="/"><img alt="projectOPEN" src="/static/img/projectopen.png" /></a></h1>
+
+				<div id="social-media">
+					<div id="social-media-button-twitter">
+	                  <a href="https://twitter.com/share" class="twitter-share-button" data-count="horizontal" data-via="brutelabs">Tweet</a><script type="text/javascript" src="//platform.twitter.com/widgets.js"></script>
+	                </div>
+					<div id="social-media-button-gplus">
+				      <g:plusone size="medium"></g:plusone>
+				    </div>
+				    <div id="social-media-button-fb">
+                      <iframe src="//www.facebook.com/plugins/like.php?app_id=260942247273505&amp;href=www.projectopensf.org&amp;send=false&amp;layout=button_count&amp;width=200&amp;show_faces=false&amp;action=like&amp;colorscheme=light&amp;font=trebuchet+ms&amp;height=21" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:200px; height:21px;" allowTransparency="true"></iframe>
+                    </div>
+				</div>
+				
 				<ul id="nav" class="DIN-bold">
 					<li><a href="/contact">Contact</a></li>
 					<li><a href="/faq">FAQ</a></li>
@@ -61,7 +95,7 @@
 					<div id="filters">
 						<div id="filters-main" class="clearfix">
 							<div id="search" class="filters-field filters-search">
-								<form id="search-form" onsubmit="OP.Data.performSearch(); return false;">
+								<form id="search-form" onsubmit="OP.Data.performSearch(); var trackingObject = {'Category':'Search','Action': 'Query','Label': $('#search-box').val()}; OP.Util.logEvent(trackingObject); return false;">
 									<div class="filters-label DIN-bold">Search By:</div>
 									<input type="text" id="search-box" class="ui-text-input ui-off" title="Organization, Topic" />
 									<input type="submit" value="" />
@@ -92,11 +126,11 @@
 		</div></div>
 		<div id="footer"></div>
 		
-		<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
-		<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
-		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
-		<script type="text/javascript" src="http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
-		<script type="text/javascript" src="http://crypto-js.googlecode.com/files/2.3.0-crypto-sha1.js"></script>
+		<script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+		<script type="text/javascript" src="//maps.google.com/maps/api/js?sensor=false"></script>
+		<script type="text/javascript" src="//www.google.com/jsapi"></script>
+		<script type="text/javascript" src="//ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js"></script>
+		<script type="text/javascript" src="//crypto-js.googlecode.com/files/2.3.0-crypto-sha1.js"></script>
 		<script type="text/javascript" src="static/open.js"></script>
 		<script type="text/javascript">
 		  OP.categoryMapping = {% autoescape off %}{{ category_map.0 }}{% endautoescape %};

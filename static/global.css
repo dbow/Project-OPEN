@@ -91,6 +91,23 @@ a:visited {
 		margin-left: 37px;
 		margin-top: 3px;
 	}
+	#social-media {
+	  float: left;
+	  margin-left: 230px;
+	}
+  	#social-media-button-twitter {
+  	  float: left;
+  	  margin-top: 9px;
+  	}
+  	#social-media-button-gplus {
+  	  float: left;
+  	  margin-top: 9px;
+  	  width: 73px;
+  	}
+  	#social-media-button-fb {
+  	  float: left;
+  	  margin-top: 9px;
+  	}
 
 #nav {
     text-align: center;

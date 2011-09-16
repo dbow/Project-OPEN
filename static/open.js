@@ -72,6 +72,16 @@ OP.FusionMap = (function () {
           initialBounds = map.getBounds();
         }
       });
+      google.maps.event.addListener(map, 'dragend', function() {
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Drag'};
+        OP.Util.logEvent(trackingObject);
+      });
+      google.maps.event.addListener(map, 'zoom_changed', function() {
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Zoom'};
+        OP.Util.logEvent(trackingObject);
+      });
       
     };
     
@@ -91,7 +101,7 @@ OP.FusionMap = (function () {
         if (ids.length) {
           // TODO(dbow): Figure out a better solution for this:
           //   Very broad queries can generate URIs that are too large
-          //   so only the first ~160 or so IDs are submitted.
+          //   so only the first ~170 or so IDs are submitted.
           if (ids.length > 170) {
             ids = ids.slice(0,169);
           }
@@ -169,6 +179,10 @@ OP.FusionMap = (function () {
           }
           e.infoWindowHtml += '</div>';
         }
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Marker Click',
+                              'Label': e.row['Name'].value};
+        OP.Util.logEvent(trackingObject);
       });
     };
 
@@ -241,7 +255,12 @@ OP.FusionMap = (function () {
     me.setUp = function () {
       me.createMap();
       $('#location').submit(function() {
-        me.updateMap($("#location-form input:first").val());
+        var locationQuery = $("#location-form input:first").val();
+        me.updateMap(locationQuery);
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Location Search',
+                              'Label': locationQuery};
+        OP.Util.logEvent(trackingObject);
         return false;
       });
     };
@@ -304,21 +323,33 @@ OP.Cats = (function () {
     };
     
     _click = function () {
+      
         var el = $(this);
         
         if (el.text() === 'All') {
             $("#cats table .cat").removeClass('on');
             el.addClass('on');
             _selected = {};
+            var trackingObject = {'Category':'Filters',
+                                  'Action': 'All'};
+            OP.Util.logEvent(trackingObject);
         }
         else if (el.hasClass('on')) {
             el.removeClass('on');
             delete _selected[el.text()];
+            var trackingObject = {'Category':'Filters',
+                                  'Action': 'Remove',
+                                  'Label': el.text()};
+            OP.Util.logEvent(trackingObject);
         }
         else {
             $(this).addClass('on');
             $("#cats .cat-all").removeClass('on');
             _selected[el.text()] = 1;
+            var trackingObject = {'Category':'Filters',
+                                  'Action': 'Add',
+                                  'Label': el.text()};
+            OP.Util.logEvent(trackingObject);
         }
         
         OP.Data.filter();
@@ -392,7 +423,6 @@ OP.Data = (function () {
         _ids = 'all';
       }
 
-      me.updateLocationLinks();
       OP.FusionMap.updateLayer(_ids);
     };
     
@@ -473,6 +503,7 @@ OP.Data = (function () {
           websiteHTML = '',
           summaryHTML = '',
           showMoreInfo = '',
+          clickTracking = '',
           imageInfo = '<img class="table-img" src="/image?filter=' + displayFilter + '"/>';
 
       if (website != 'None') {
@@ -490,6 +521,12 @@ OP.Data = (function () {
       if (image == 'True') {
         imageInfo = '<img class="table-img" src="/image?wikiurl=' + resourceURL + '" />';
       }
+      
+      clickTracking = 'var trackingObject = ' +
+          '{\'Category\':\'Outbound Clicks\',' +
+           '\'Action\': \'Resource\',' +
+           '\'Label\': \'' + name + '\'};' +
+           'OP.Util.logEvent(trackingObject);';
 
     	rowHTML = $(
     	'<div class="row clearfix" id="' + id + '">' +
@@ -500,7 +537,8 @@ OP.Data = (function () {
       		  '</div>' +
       		'<div class="table-cells">' +
         		'<div class="cell table-name DIN-bold">' +
-        		'<a target="_blank" href="'+ OP.WIKI_URL + resourceURL + '">' +
+        		'<a target="_blank" href="'+ OP.WIKI_URL + resourceURL + '" ' +
+        		'onClick="' + clickTracking + '">' +
         		name + '</a></div>' +
         		'<div class="cell table-services">' + categories + '</div>' +
         		'<div class="cell table-address">' + address +
@@ -516,10 +554,14 @@ OP.Data = (function () {
     };
     
     me.updateLocationLinks = function () {
-      $('a.table-address-update').click(function(e) {
+      $('a.table-address-update').live('click', function(e) {
         e.preventDefault();
         var address = $(this).parent().text().replace('Go Here','');
         OP.FusionMap.updateMap(address);
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Go here',
+                              'Label': address};
+        OP.Util.logEvent(trackingObject);
       });
     }
     
@@ -580,6 +622,7 @@ OP.MyGuide = (function () {
 		_guides = {};
 		
 	function _clickAdd() {
+
 		var el = $(this),
     		id = el.parents('.row').data('id'),
     		div;
@@ -599,6 +642,12 @@ OP.MyGuide = (function () {
     	
     	$('.rail-guide-empty').hide();
     	$('.rail-guide-added-box').append(div);
+    	
+    	var rowName = el.siblings('.table-cells').children('.table-name').text();
+    	var trackingObject = {'Category':'My Guide Interactions',
+                            'Action': 'Add',
+                            'Label': rowName};
+      OP.Util.logEvent(trackingObject);
 	}
 	
 	function _clickRemove() {
@@ -610,6 +659,12 @@ OP.MyGuide = (function () {
 		});
 		
 		delete _current[id];
+		
+	  var rowName = el.children('.table-name').text();
+  	var trackingObject = {'Category':'My Guide Interactions',
+                          'Action': 'Remove',
+                          'Label': rowName};
+    OP.Util.logEvent(trackingObject);
 	}
 	
 	me.save = function (callback) {
@@ -635,6 +690,11 @@ OP.MyGuide = (function () {
 		$(document.body).one('click', function () {
 			$('.rail-option-copy').hide();
 		});
+		var trackingObject = {'Category':'My Guide Maps',
+                          'Action': 'Link',
+                          'Label': hash,
+                          'Value': _guides[hash].length};
+    OP.Util.logEvent(trackingObject);
 	}
 	me.link = function () {
 		me.save(me.link2);
@@ -642,6 +702,11 @@ OP.MyGuide = (function () {
 	
 	me.email2 = function (hash) {
 		window.location = 'mailto:?subject=projectOPEN Map&body=' + me.url(hash);
+		var trackingObject = {'Category':'My Guide Maps',
+                          'Action': 'Email',
+                          'Label': hash,
+                          'Value': _guides[hash].length};
+    OP.Util.logEvent(trackingObject);
 	};
 	me.email = function () {
 		me.save(me.email2);
@@ -650,6 +715,11 @@ OP.MyGuide = (function () {
 	me.print = function () {
 		me.save(function (hash) {
 			window.open(me.url(hash));
+			var trackingObject = {'Category':'My Guide Maps',
+                            'Action': 'Print',
+                            'Label': hash,
+                            'Value': _guides[hash].length};
+      OP.Util.logEvent(trackingObject);
 		});
 	};
 	
@@ -840,9 +910,15 @@ OP.Util = (function () {
     	$('.filters-toggle').toggle(function () {
     		$(this).text('Show Filters').addClass('ui-off');
     		$('#cats').slideUp();
+    		var trackingObject = {'Category':'UI Interactions',
+                              'Action': 'Hide Filters'};
+        OP.Util.logEvent(trackingObject);
     	}, function () {
     		$(this).text('Hide Filters').removeClass('ui-off');
     		$('#cats').slideDown();
+    		var trackingObject = {'Category':'UI Interactions',
+                              'Action': 'Show Filters'};
+        OP.Util.logEvent(trackingObject);
     	});
     	
     	//set up table toggler
@@ -851,19 +927,33 @@ OP.Util = (function () {
         	if (el.text() === 'More Information') {
         		el.text('Less Information').addClass('ui-off');
         		el.parent().parent().siblings().slideDown();
+        		var trackingObject = {'Category':'UI Interactions',
+                                  'Action': 'Show More Information',
+                                  'Label': el.siblings('.table-name').text()};
+            OP.Util.logEvent(trackingObject);
         	}
         	else {
         		el.text('More Information').removeClass('ui-off');
         		el.parent().parent().siblings().slideUp();
+        		var trackingObject = {'Category':'UI Interactions',
+                                  'Action': 'Hide More Information',
+                                  'Label': el.siblings('.table-name').text()};
+            OP.Util.logEvent(trackingObject);
         	}
         });
         
         //set up rail toggler
         $(".rail-hide").click(function () {
         	$("#page").addClass('page-wide');
+        	var trackingObject = {'Category':'UI Interactions',
+                                'Action': 'Hide My Guide'};
+          OP.Util.logEvent(trackingObject);
         });
         $(".rail-show").click(function () {
         	$("#page").removeClass('page-wide');
+        	var trackingObject = {'Category':'UI Interactions',
+                                'Action': 'Show My Guide'};
+          OP.Util.logEvent(trackingObject);
         });
         
         //set up table hide/show
@@ -927,6 +1017,24 @@ OP.Util = (function () {
 	me.setHeights = function () {
 	  $("#rail").css('minHeight', $("#content").height() - 20);
 	};
+	
+	me.logEvent = function (args) {
+	  var gaEvent = ['_trackEvent'],
+	      category = args['Category'],
+	      action = args['Action'],
+	      label = args['Label'],
+	      value = args['Value'];
+
+    gaEvent.push(category);
+    gaEvent.push(action);
+    if(label) {
+      gaEvent.push(label);
+    }
+    if(value) {
+      gaEvent.push(value);
+    }
+	  _gaq.push(gaEvent);
+	};
 
   return me;
 
@@ -938,11 +1046,14 @@ OP.Util = (function () {
 $(function () {
 	if (location.pathname === '/map') {
 		OP.Map.setUp();
-	}  else {
+	} else if (location.pathname != '/about' &&
+	           location.pathname != '/faq' &&
+	           location.pathname != '/contact') {
 		OP.Util.setUp();
 	  OP.FusionMap.setUp();
 	  OP.Cats.retrieve();
 	  OP.Util.setHeights();
+	  OP.Data.updateLocationLinks();
   }
 });
 

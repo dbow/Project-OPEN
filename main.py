@@ -620,7 +620,7 @@ class FusionTablesCredentialsHandler(webapp.RequestHandler):
       self.redirect('/admin/fusionsync')
 
 
-class FusionTablesSyncHandler(webapp.RequestHandler):
+class FusionTablesSyncTaskHandler(webapp.RequestHandler):
   """A task to update a FusionTables row for a given wiki page."""
 
   def post(self):
@@ -634,7 +634,7 @@ class FusionTablesSyncLauncher(webapp.RequestHandler):
   """Initiates a complete sync of datastore to FusionTables."""
 
   def get(self):
-    """For each Active resource, launches a FusionTablesSyncHandler task."""
+    """For each Active resource, launches a FusionTablesSyncTaskHandler task."""
 
     user = RunningUser.all().get()
     if not user:
@@ -890,6 +890,7 @@ class MainHandler(webapp.RequestHandler):
     self.response.out.write(template.render(path, template_values))
 
 
+# Removed for actual launch.
 class SplashHandler(webapp.RequestHandler):
   """A temporary splash page to hold a place for the site."""
 
@@ -899,7 +900,7 @@ class SplashHandler(webapp.RequestHandler):
     self.response.out.write(template.render(path, {}))
 
 
-class GetImage(webapp.RequestHandler):
+class GetImageHandler(webapp.RequestHandler):
   """TODO."""
   def get(self):
     """TODO."""
@@ -1111,18 +1112,17 @@ class SetStaticHandler(webapp.RequestHandler):
 
 def main():
     application = webapp.WSGIApplication(
-        [('/', SplashHandler),
-         ('/main', MainHandler),
+        [('/', MainHandler),
          ('/about', StaticHandler),
          ('/contact', StaticHandler),
          ('/faq', StaticHandler),
-         ('/image', GetImage),
+         ('/image', GetImageHandler),
          ('/save', SaveHandler),
          ('/map', SavedMapHandler),
-         ('/admin/static', SetStaticHandler), #admin-only.
          ('/admin/wikistatus', WikiStatusHandler),  #admin-only.
-         ('/admin/category', CategorySyncLauncher),  #admin-only.
+         ('/admin/static', SetStaticHandler), #admin-only.
          ('/admin/categoryimage', CategoryImageUploader), #admin-only.
+         ('/admin/category', CategorySyncLauncher),  #admin-only.
          ('/task/category', CategorySyncTaskHandler), #admin-only.
          ('/admin/wikisync', WikiSyncLauncher),  #admin-only.
          ('/task/wikisync', WikiSyncTaskHandler),  #admin-only.
@@ -1130,7 +1130,7 @@ def main():
          ('/task/geosync', GeocodingSyncTaskHandler),   #admin-only.
          ('/admin/fusioncredentials', FusionTablesCredentialsHandler),  #admin-only.
          ('/admin/fusionsync', FusionTablesSyncLauncher),  #admin-only.
-         ('/task/fusionsync', FusionTablesSyncHandler)],  #admin-only.
+         ('/task/fusionsync', FusionTablesSyncTaskHandler)],  #admin-only.
         debug=True)
     util.run_wsgi_app(application)
 
