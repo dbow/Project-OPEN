@@ -61,8 +61,8 @@ OP.FusionMap = (function () {
         mapTypeId: 'roadmap',
         scrollwheel: false
       });
-
-      me.updateLayer('all');
+      
+      //me.updateLayer('all');
 
       OP.Util.setHeights();
 
@@ -92,6 +92,30 @@ OP.FusionMap = (function () {
      */
     me.updateLayer = function (ids) {
 
+      var image = new google.maps.MarkerImage(
+          '/static/img/test_icon.png',
+          new google.maps.Size(20, 23),
+          new google.maps.Point(0,0),
+          new google.maps.Point(10, 23));
+      var shape = {
+          coord: [1, 1, 1, 20, 18, 20, 18 , 1],
+          type: 'poly'
+      };
+      var resourceLength = OP.resourceList.length;
+      for (var i = 0; i < resourceLength; i++) {
+        var resource = OP.resourceList[i];
+        var resourceLatLng = new google.maps.LatLng(resource[1], resource[2]);
+        var marker = new google.maps.Marker({
+            position: resourceLatLng,
+            map: map,
+            icon: image,
+            shape: shape,
+            title: resource[0],
+        });
+      }
+
+      // Replacing FusionTablesLayer with manual Markers and InfoWindows.
+      /*
       var queryParams = {
         select: 'Address',
         from: OP.FUSION_ID,
@@ -145,6 +169,8 @@ OP.FusionMap = (function () {
       });
       me.stylizeLayer(layer);
       layer.setMap(map);
+      */
+
     };
 
     /**
@@ -504,7 +530,7 @@ OP.Data = (function () {
           summaryHTML = '',
           showMoreInfo = '',
           clickTracking = '',
-          imageInfo = '<img class="table-img" src="/image?filter=' + displayFilter + '"/>';
+          imageInfo = '<img class="table-img" src="http://projectopensf.org/image?filter=' + displayFilter + '"/>';
 
       if (website != 'None') {
         websiteHTML = '<div class="cell table-link"><a target="_blank" href="'+
@@ -519,7 +545,7 @@ OP.Data = (function () {
       }
 
       if (image == 'True') {
-        imageInfo = '<img class="table-img" src="/image?wikiurl=' + resourceURL + '" />';
+        imageInfo = '<img class="table-img" src="http://projectopensf.org/image?wikiurl=' + resourceURL + '" />';
       }
       
       clickTracking = 'var trackingObject = ' +

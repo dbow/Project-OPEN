@@ -134,6 +134,7 @@
 		<script type="text/javascript" src="static/open.js"></script>
 		<script type="text/javascript">
 		  OP.categoryMapping = {% autoescape off %}{{ category_map.0 }}{% endautoescape %};
+		  OP.resourceList = {% autoescape off %}[{% for resource in resources %}["{{ resource.name }}", {{ resource.geocoded_address }}],{% endfor %}]{% endautoescape %};
 		</script>
 	</body>
 </html>

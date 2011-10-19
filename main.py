@@ -560,8 +560,8 @@ class GeocodingSyncTaskHandler(webapp.RequestHandler):
         logging.info(str('resource ' + resource.key().name() +
                          ' failed to geocode with this address: ' +
                          resource.address))
-        #resource.status = 'Incomplete'
-        #resource.put()
+        resource.status = 'Incomplete'
+        resource.put()
       else:
         time.sleep(2)
         raise EnvironmentError(status.data)
