@@ -18,6 +18,9 @@ OP.FusionMap = (function () {
 
     var me = {},
       layer,
+      markersArray = [],
+      visibleMarkers = [],
+      infoWindow = new google.maps.InfoWindow({}),
 		  _targetLocation,
 		  _listener;
 
@@ -27,9 +30,22 @@ OP.FusionMap = (function () {
      */
     me.changeData = function () {
 
-      var whereClause = "";
+      
 
       var mapBounds = map.getBounds();
+      if (mapBounds) {
+        visibleMarkers = [];
+        for (i in markersArray) {
+          var pos = markersArray[i].getPosition();
+          if (mapBounds.contains(pos)) {
+            visibleMarkers.push(markersArray[i].title)
+          }
+        }
+      }
+      
+      /*
+      
+      var whereClause = "";
       if (mapBounds) {
         whereClause += " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
                        mapBounds.getSouthWest() +
@@ -47,6 +63,9 @@ OP.FusionMap = (function () {
       	jsonp: 'jsonCallback',
       	success: OP.Data.receive
       });
+      */
+      
+      
     };
 
     /**
@@ -62,7 +81,7 @@ OP.FusionMap = (function () {
         scrollwheel: false
       });
       
-      //me.updateLayer('all');
+      me.updateLayer('all');
 
       OP.Util.setHeights();
 
@@ -101,17 +120,26 @@ OP.FusionMap = (function () {
           coord: [1, 1, 1, 20, 18, 20, 18 , 1],
           type: 'poly'
       };
-      var resourceLength = OP.resourceList.length;
-      for (var i = 0; i < resourceLength; i++) {
-        var resource = OP.resourceList[i];
-        var resourceLatLng = new google.maps.LatLng(resource[1], resource[2]);
+      if (ids == 'all') {
+        ids = OP.resourceList;
+      }
+      for (var id in ids) {
+        var resource = OP.resourceList[id];
+        var resCoords = resource['GeocodedAddress'].split(',');
+        var resourceLatLng = new google.maps.LatLng(parseFloat(resCoords[0]),
+                                                    parseFloat(resCoords[1]));
         var marker = new google.maps.Marker({
             position: resourceLatLng,
             map: map,
-            icon: image,
             shape: shape,
-            title: resource[0],
+            title: id,
         });
+        if (resource['DisplayFilter'] == 'Other') {
+          marker.setIcon(image);
+        }
+        markersArray.push(marker);
+        me.setupInfoWindow(marker, id);
+        
       }
 
       // Replacing FusionTablesLayer with manual Markers and InfoWindows.
@@ -172,44 +200,49 @@ OP.FusionMap = (function () {
       */
 
     };
+    
+    me.setupInfoWindow = function (marker, id) {
+      
+      google.maps.event.addListener(marker, 'click', function(e) {
+        infoWindow.setContent(me.retrieveInfoWindowHTML(id));
+        infoWindow.open(map, marker);
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Marker Click',
+                              'Label': OP.resourceList[id]['Name']};
+        OP.Util.logEvent(trackingObject);
+      });
+
+    };
 
     /**
      * Sets the styling for the InfoWindow of the provided FusionTablesLayer.
      * @param {google.maps.FusionTablesLayer} layer A FusionTablesLayer to style.
      */
-    me.stylizeLayer = function (layer) {
+    me.retrieveInfoWindowHTML = function (resourceID) {
 
-      // add a click listener to the layer, so we can customize the info window
-      // when it's displayed.
-      _listener = google.maps.event.addListener(layer, 'click', function(e) {
-
-        //update the content of the InfoWindow
-        e.infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
-                           e.row['Name'].value + '</div>';
-        if (e.row['Categories'].value != 'None') {
-          e.infoWindowHtml += '<div class="table-services">' +
-                               e.row['Categories'].value + '</br></div>';
+        var resource = OP.resourceList[resourceID];
+        var infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
+                           resource['Name'] + '</div>';
+        if (resource['Categories']) {
+          infoWindowHtml += '<div class="table-services">' +
+                               resource['Categories'] + '</br></div>';
         }
-        if (e.row['Address'].value != 'None' ||
-            e.row['Phone'].value != 'None' ||
-            e.row['Hours'].value != 'None') {
-          e.infoWindowHtml += '<div class="table-address">';
-          if (e.row['Address'].value != 'None') {
-            e.infoWindowHtml += e.row['Address'].value + '</br>';
+        if (resource['Address'] ||
+            resource['Phone'] ||
+            resource['Hours']) {
+          infoWindowHtml += '<div class="table-address">';
+          if (resource['Address']) {
+            infoWindowHtml += resource['Address'] + '</br>';
           }
-          if (e.row['Phone'].value != 'None') {
-            e.infoWindowHtml += e.row['Phone'].value + '</br>';
+          if (resource['Phone']) {
+            infoWindowHtml += resource['Phone'] + '</br>';
           }
-          if (e.row['Hours'].value != 'None') {
-            e.infoWindowHtml += e.row['Hours'].value;
+          if (resource['Hours']) {
+            infoWindowHtml += resource['Hours'];
           }
-          e.infoWindowHtml += '</div>';
+          infoWindowHtml += '</div>';
         }
-        var trackingObject = {'Category':'Map',
-                              'Action': 'Marker Click',
-                              'Label': e.row['Name'].value};
-        OP.Util.logEvent(trackingObject);
-      });
+        return infoWindowHtml;
     };
 
     /**

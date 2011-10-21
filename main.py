@@ -91,6 +91,8 @@ class Resource(db.Model):
     categories: The full list of categories tagged to this resource.
     frontend_categories: The list of categories tagged to this resource that
       are FrontendCategories entities.
+    filter_categories = The list of parent categories that this resource's
+      frontend categories are part of.  Used for frontend filtering.
     address: The resource's address.
     phone: The resource's phone number.
     email: The resource's email address.
@@ -114,6 +116,7 @@ class Resource(db.Model):
   summary = db.TextProperty(default=None)
   categories = db.StringListProperty(default=None)
   frontend_categories = db.StringListProperty(default=None)
+  filter_categories = db.StringListProperty(default=None)
   address = db.PostalAddressProperty()
   geocoded_address = db.GeoPtProperty(default=None)
   phone = db.PhoneNumberProperty(default=None)
@@ -358,7 +361,6 @@ def syncResource(resource_page, resource_id=None):
   """TODO."""
 
   logging.info('getResourceInfo: ' + resource_page)
-  logging.info(resource_id)
   resource_info = getResourceInfo(resource_page)
   decoded_url = resource_page.decode('utf-8')
 
@@ -378,9 +380,20 @@ def syncResource(resource_page, resource_id=None):
     if frontend_category:
       frontend_categories.append(category)
   resource.frontend_categories = frontend_categories
+  
+  category_maps = retrieveCategoryMapping()
+  child_category_map = category_maps[1]
+  filter_categories = []
+  for frontend_cat in resource.frontend_categories:
+    parent_category = child_category_map[frontend_cat]
+    if parent_category not in filter_categories:
+      filter_categories.append(parent_category)
+  resource.filter_categories = filter_categories
+
   address = resource_info['Address']
   if resource.status != 'Excluded':
     if resource.name and resource.frontend_categories and address:
+      # TODO(dbow): Should instead do this on the geocoding side probably.
       if 'San Francisco' not in address:
         address += ' San Francisco, CA'
       resource.address = address.decode('utf-8')
@@ -404,12 +417,12 @@ def syncResource(resource_page, resource_id=None):
     if resource_info['Language-28s-29']:
       languages = resource_info['Language-28s-29'].replace('\n', '')
       resource.languages = languages.decode('utf-8')
-  image_data = getResourceImage(resource_page)
+  """image_data = getResourceImage(resource_page)
   if image_data:
     image = images.Image(str(image_data))
     image.resize(width=160, height=120)
     resized_image = image.execute_transforms()
-    resource.image = db.Blob(resized_image)
+    resource.image = db.Blob(resized_image)"""
   resource.put()
 
 
@@ -879,11 +892,34 @@ class MainHandler(webapp.RequestHandler):
   def get(self):
     """Retrieves resources and passes them to the frontend."""
 
-    resources = Resource().all().filter('status =', 'Active')
+    datastore_resources = Resource().all().filter('status =', 'Active')
+    resources = {}
+    
+    for resource in datastore_resources:
+      image = False
+      if resource.image:
+        image = True
+      resources[resource.key().name()] = {
+  	           'Name': resource.name,
+  	           'GeocodedAddress': str(resource.geocoded_address),
+  	           'WikiUrl': resource.wikiurl,
+  	           'Categories': resource.frontend_categories,
+  	           'FilterCategories': resource.filter_categories,
+  	           'DisplayFilter': resource.filter_categories[0],
+  	           'Address': resource.address,
+  	           'Website': resource.website,
+  	           'Hours': resource.hours,
+  	           'Phone': resource.phone,
+  	           'Email': resource.email,
+  	           'Contacts': resource.contacts,
+  	           'Languages': resource.languages,
+  	           'Image': image,
+  	           'Summary': resource.summary
+  	       }
     category_map = retrieveCategoryMapping()
 
     template_values = {
-        'resources': resources,
+        'resources': simplejson.dumps(resources),
         'category_map': category_map,
     }
     path = os.path.join(os.path.dirname(__file__), 'index.html')
