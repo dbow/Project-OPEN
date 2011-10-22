@@ -11,40 +11,49 @@ var initialBounds;
 var sf_latlng = new google.maps.LatLng(37.77493,-122.419416);
 
 /**
- * The namespace for code creating and updating the main resource map, which
- * includes a FusionTablesLayer.
+ * The namespace for code creating and updating the main resource map.
  */
 OP.FusionMap = (function () {
 
     var me = {},
-      layer,
-      markersArray = [],
-      visibleMarkers = [],
-      infoWindow = new google.maps.InfoWindow({}),
-		  _targetLocation,
-		  _listener;
+        _targetLocation,
+        _markers, // All markers created originally.
+        _visibleMarkers = [], // The IDs of currently visible markers.
+        _infoWindow = new google.maps.InfoWindow({}),
+        _image = new google.maps.MarkerImage( // The test custom marker icon.
+          '/static/img/test_icon.png',
+          new google.maps.Size(20, 23),
+          new google.maps.Point(0,0),
+          new google.maps.Point(10, 23)),
+        _shape = {
+          coord: [1, 1, 1, 20, 18, 20, 18 , 1],
+          type: 'poly'
+          };
+
+    me.getVisible = function () {
+      return _visibleMarkers;
+    };
 
     /**
-     * Retrieves all FusionTables resources within the current map bounds, and
+     * Retrieves all resources within the current map bounds, and
      * then calls OP.Data.receive with the results.
      */
     me.changeData = function () {
 
-      
-
       var mapBounds = map.getBounds();
       if (mapBounds) {
-        visibleMarkers = [];
-        for (i in markersArray) {
-          var pos = markersArray[i].getPosition();
-          if (mapBounds.contains(pos)) {
-            visibleMarkers.push(markersArray[i].title)
+        _visibleMarkers = [];
+        for (i in _markers) {
+          var marker = _markers[i];
+          if (mapBounds.contains(marker.getPosition())) {
+            _visibleMarkers.push(marker.title);
           }
         }
+        OP.Data.filter();
       }
       
+      // TODO(dbow): REMOVE BELOW WHEN FUSIONTABLES NO LONGER NEEDED
       /*
-      
       var whereClause = "";
       if (mapBounds) {
         whereClause += " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
@@ -64,13 +73,12 @@ OP.FusionMap = (function () {
       	success: OP.Data.receive
       });
       */
-      
-      
+        
     };
 
     /**
-     * Creates a map centered on San Francisco, with a FusionTablesLayer, and
-     * an event listener when the map goes idle that calls changeData.
+     * Creates a map centered on San Francisco and
+     * an event listener when the map goes idle that calls changeData().
      */
     me.createMap = function () {
 
@@ -81,7 +89,7 @@ OP.FusionMap = (function () {
         scrollwheel: false
       });
       
-      me.updateLayer('all');
+      me.updateLayer(null);
 
       OP.Util.setHeights();
 
@@ -105,44 +113,53 @@ OP.FusionMap = (function () {
     };
     
     /**
-     * Updates the FusionTablesLayer on the map to include the currently
-     * filtered set of resources.
+     * Updates the map to include the currently filtered set of resources.
      * @param {Array.<string>} ids A list of resource IDs.
      */
     me.updateLayer = function (ids) {
+      
+      var isUpdate = true;
+      if (!_markers) {
+        isUpdate = false;
+        _markers = {};
+      }
 
-      var image = new google.maps.MarkerImage(
-          '/static/img/test_icon.png',
-          new google.maps.Size(20, 23),
-          new google.maps.Point(0,0),
-          new google.maps.Point(10, 23));
-      var shape = {
-          coord: [1, 1, 1, 20, 18, 20, 18 , 1],
-          type: 'poly'
-      };
-      if (ids == 'all') {
+      for (var j in _markers) {
+        _markers[j].setMap(null);
+      }
+
+      var allResources = false;
+      if (!ids) {
         ids = OP.resourceList;
-      }
-      for (var id in ids) {
-        var resource = OP.resourceList[id];
-        var resCoords = resource['GeocodedAddress'].split(',');
-        var resourceLatLng = new google.maps.LatLng(parseFloat(resCoords[0]),
-                                                    parseFloat(resCoords[1]));
-        var marker = new google.maps.Marker({
-            position: resourceLatLng,
-            map: map,
-            shape: shape,
-            title: id,
-        });
-        if (resource['DisplayFilter'] == 'Other') {
-          marker.setIcon(image);
-        }
-        markersArray.push(marker);
-        me.setupInfoWindow(marker, id);
-        
+        allResources = true;
       }
 
-      // Replacing FusionTablesLayer with manual Markers and InfoWindows.
+      for (var id in ids) {
+        if (!allResources) {
+          id = ids[id];
+        }
+        if (isUpdate) {
+          _markers[id].setMap(map);
+        } else {
+          var resource = OP.resourceList[id];
+          var resCoords = resource['GeocodedAddress'].split(',');
+          var resourceLatLng = new google.maps.LatLng(parseFloat(resCoords[0]),
+                                                      parseFloat(resCoords[1]));
+          var marker = new google.maps.Marker({
+              position: resourceLatLng,
+              map: map,
+              shape: _shape,
+              title: id,
+          });
+          if (resource['DisplayFilter'] == 'Other') {
+            marker.setIcon(_image);
+          }
+          _markers[id] = marker;
+          me.setupInfoWindow(marker, id);
+        }        
+      }
+
+      // TODO(dbow): REMOVE BELOW WHEN FUSIONTABLES NO LONGER NEEDED
       /*
       var queryParams = {
         select: 'Address',
@@ -201,11 +218,17 @@ OP.FusionMap = (function () {
 
     };
     
+    /**
+     * Creates a click listener (with a closure) to customize the content
+     * of the InfoWindow based on which marker is clicked.
+     * @param {google.maps.Marker} marker The marker that was clicked.
+     * @param {string} id The ID of the resource corresponding to the marker.
+     */
     me.setupInfoWindow = function (marker, id) {
       
       google.maps.event.addListener(marker, 'click', function(e) {
-        infoWindow.setContent(me.retrieveInfoWindowHTML(id));
-        infoWindow.open(map, marker);
+        _infoWindow.setContent(me.retrieveInfoWindowHTML(id));
+        _infoWindow.open(map, marker);
         var trackingObject = {'Category':'Map',
                               'Action': 'Marker Click',
                               'Label': OP.resourceList[id]['Name']};
@@ -215,12 +238,12 @@ OP.FusionMap = (function () {
     };
 
     /**
-     * Sets the styling for the InfoWindow of the provided FusionTablesLayer.
-     * @param {google.maps.FusionTablesLayer} layer A FusionTablesLayer to style.
+     * Sets the content of the InfoWindow to the clicked resource.
+     * @param {string} resourceId The ID of the resource clicked.
      */
-    me.retrieveInfoWindowHTML = function (resourceID) {
+    me.retrieveInfoWindowHTML = function (resourceId) {
 
-        var resource = OP.resourceList[resourceID];
+        var resource = OP.resourceList[resourceId];
         var infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
                            resource['Name'] + '</div>';
         if (resource['Categories']) {
@@ -419,20 +442,17 @@ OP.Cats = (function () {
 
 
 OP.Data = (function () {
+
     var me = {},
-    
-    _cache, // The fusion table query data (rows within the map bounds, before filtering)
     _table = $("#table").html(''),
     _tmpl = $("#table").template('table'),
-    _filtered = [], // The rows returned after category filtering
-    _results = [], // The rows returned after both category and search filtering
-    _ids = []; // The IDs of the _results rows.
+    _visible = [], // The IDs of the resources visible on the map.
+    _filtered = [], // The IDs returned after category filtering.
+    _results = []; // The IDs returned after both category and search filtering.
+    //_ids = []; // The IDs of the _results rows.
     
     $("#table").html('');
-    
-    me.getCache = function () {
-        return _cache.getDataTable();
-    };
+
     me.getTable = function () {
         return _table;
     };
@@ -445,171 +465,198 @@ OP.Data = (function () {
     
     me.performSearch = function () {
 
-      var rows = _filtered,
-          search = $("#search-box"),
-          _table = $("#table").html(''),
+      var search = $("#search-box"),
+          // rows = _filtered,
+          // _table = $("#table").html(''),
           _ids = [],
           searchPerformed = false,
-          searchQuery = search.val();
-
-      if (_results.length) {
-        _results = [];
-      }
+          searchQuery = search.val(),
+          searchFields = ['Name',
+                          'Website',
+                          'Address',
+                          'Categories',
+                          'FilterCategories',
+                          'Summary',
+                          'Phone',
+                          'Email',
+                          'Languages'],
+          numSearchFields = searchFields.length;
 
       if (searchQuery && searchQuery !== search.attr('title')) {
-        searchPerformed = true;
-      }
-      for (var i in rows) {
-        var rowMatches = false;
-        if (searchPerformed) {
+
+        _results = [];
+
+        for (var id in _filtered) {
+
+          var resourceId = _filtered[id],
+              rowMatches = false;
           var searchRegex = new RegExp($('#search-box').val(), 'i');
-          for (var field = 0; field < 6; field++) {
-            if (searchRegex.test(rows[i][field])) {
+          var resource = OP.resourceList[resourceId];
+          for (i = 0; i < numSearchFields; i++) {
+            if (searchRegex.test(resource[searchFields[i]])) {
               rowMatches = true;
             }
           }
+          if (rowMatches) {
+              _results.push(resourceId);
+          }
         }
-        if (rowMatches || !searchPerformed) {
-            _results.push(rows[i]);
-        		me.buildRow(rows[i]);
-        		_ids.push(rows[i][1]);
-        }
-      }
-      
-      $("#table").show();
-      OP.Util.setHeights();
-      if (_results.length == _cache.table.rows.length) {
-        _ids = 'all';
+
+      } else {
+        _results = _filtered;
       }
 
-      OP.FusionMap.updateLayer(_ids);
+      $("#table").show();
+      OP.Util.setHeights();
+      me.displayRows(_results);
+      OP.FusionMap.updateLayer(_results);
+    };
+    
+    me.displayRows = function(resultSet) {
+      
+      if (resultSet) {
+        $('.row').each(function() {
+    		  $(this).addClass('invisible');
+    		});
+    		var resultLen = resultSet.length;
+        for (i = 0; i < resultLen; i++) {
+          $('#' + resultSet[i]).removeClass('invisible');
+        }
+      } else {
+        $('.row').each(function() {
+    		  $(this).removeClass('invisible');
+    		});
+      }
+      
     };
     
     me.filter = function () {
-    	var rows = _cache.table.rows,
-    	  cats = OP.Util.toArrayKeys(OP.Cats.getSelected()),
-    		_table = $("#table").html(''),
+    	var cats = OP.Util.toArrayKeys(OP.Cats.getSelected()),
+    		// _table = $("#table").html(''),
     		catsKeyed = {};
-    		
-    		if (_filtered.length) {
-    		  _filtered = [];
-    		}
-    
+
+        _visible = OP.FusionMap.getVisible();
+        
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
         	  catsKeyed[cats[i]] = 1;
         	}
-        } else {
-        	cats = null;
-        }
-        
-        _table.hide();
-        
-        /*
-          TODO(dbow): If we decide to have search results dictate the bounds of
-          the map, we'll need to uncomment and complete the code in the sections below.
-        */
+        	_filtered = [];
+        	_table.hide();
+        	
+          /*
+            TODO(dbow): If we decide to have search results dictate the bounds of
+            the map, we'll need to uncomment and complete the code in the sections below.
+          */
 
-        //var geocoder = new google.maps.Geocoder();
-        //var bounds = new google.maps.LatLngBounds();
-        for (var i in rows) {
-          var inCategory = false;
-          var filteredCats = rows[i][9].split(', ');
-          var filteredLen = filteredCats.length;
-          for (var j = 0; j < filteredLen; j++) {
-            if(catsKeyed[filteredCats[j]]) {
-              inCategory = true;
+          //var geocoder = new google.maps.Geocoder();
+          //var bounds = new google.maps.LatLngBounds();
+        
+          for (var i in _visible) {
+            var resourceId = _visible[i];
+            var resource = OP.resourceList[resourceId];
+            var inCategory = false;
+            var filteredCats = resource['FilterCategories'].toString().split(', ');
+            var filteredLen = filteredCats.length;
+            for (var j = 0; j < filteredLen; j++) {
+              if(catsKeyed[filteredCats[j]]) {
+                inCategory = true;
+              }
             }
-          }
-        	if (!cats || inCategory) {
+          	if (!cats || inCategory) {
         		
-        		_filtered.push(rows[i]);
+          		_filtered.push(resourceId);
         		
-            //console.log('looking at address: ' + rows[i][3]);
-            //geocoder.geocode(
-            //    {'address': rows[i][3]},
-            //    function(results, status) {
-            //      if (status == google.maps.GeocoderStatus.OK) {
-            //        console.log('extending bounds to include: ' + rows[i][3]);
-            //        bounds.union(results[0].geometry.viewport);
-            //      } else {
-            //        console.log("Address not found: " + rows[i][3]);
-            //      }
-            //    });
-        	}
+              //console.log('looking at address: ' + rows[i][3]);
+              //geocoder.geocode(
+              //    {'address': rows[i][3]},
+              //    function(results, status) {
+              //      if (status == google.maps.GeocoderStatus.OK) {
+              //        console.log('extending bounds to include: ' + rows[i][3]);
+              //        bounds.union(results[0].geometry.viewport);
+              //      } else {
+              //        console.log("Address not found: " + rows[i][3]);
+              //      }
+              //    });
+          	}
+          }	
+        } else {
+          _filtered = _visible;
         }
         
         me.performSearch();
         
         //map.fitBounds(bounds);
-        
-		//$("#table").html( $.tmpl('_table', _cache._table.rows) );
 
     };
     
-    me.buildRow = function(row) {
-
-      var rowHTML,
-          name = row[0],
-          id = row[1],
-          website = row[2],
-          address = row[3],
-          categories = row[4],
-          summary = row[5],
-          image = row[6],
-          resourceURL = row[7],
-          displayFilter = row[8]
-          websiteHTML = '',
-          summaryHTML = '',
-          showMoreInfo = '',
-          clickTracking = '',
-          imageInfo = '<img class="table-img" src="http://projectopensf.org/image?filter=' + displayFilter + '"/>';
-
-      if (website != 'None') {
-        websiteHTML = '<div class="cell table-link"><a target="_blank" href="'+
-                         website +'">' + website + '</a></div>';
-      }
-
-      if (summary != 'None') {
-        summaryHTML = '<div class="table-more" style="display: none;">' +
-    			'<div class="cell table-info">' + summary + '</div>' +
-    		'</div>';
-        showMoreInfo = '<div class="table-toggle">More Information</div>';
-      }
-
-      if (image == 'True') {
-        imageInfo = '<img class="table-img" src="http://projectopensf.org/image?wikiurl=' + resourceURL + '" />';
-      }
+    me.buildRows = function() {
       
-      clickTracking = 'var trackingObject = ' +
-          '{\'Category\':\'Outbound Clicks\',' +
-           '\'Action\': \'Resource\',' +
-           '\'Label\': \'' + name + '\'};' +
-           'OP.Util.logEvent(trackingObject);';
+      for (resourceId in OP.resourceList) {
+        
+        var rowHTML,
+            resource = OP.resourceList[resourceId],
+            name = resource['Name'],
+            id = resourceId,
+            website = resource['Website'],
+            address = resource['Address'],
+            categories = resource['Categories'],
+            summary = resource['Summary'],
+            image = resource['Image'],
+            resourceURL = resource['WikiUrl'],
+            displayFilter = resource['DisplayFilter']
+            websiteHTML = '',
+            summaryHTML = '',
+            showMoreInfo = '',
+            clickTracking = '',
+            imageInfo = '<img class="table-img" src="http://projectopensf.org/image?filter=' + displayFilter + '"/>';
 
-    	rowHTML = $(
-    	'<div class="row clearfix" id="' + id + '">' +
-    		'<div class="clearfix">' +
-    			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
-    			  '<div class="table-img-container">' +
-      		  imageInfo +
-      		  '</div>' +
-      		'<div class="table-cells">' +
-        		'<div class="cell table-name DIN-bold">' +
-        		'<a target="_blank" href="'+ OP.WIKI_URL + resourceURL + '" ' +
-        		'onClick="' + clickTracking + '">' +
-        		name + '</a></div>' +
-        		'<div class="cell table-services">' + categories + '</div>' +
-        		'<div class="cell table-address">' + address +
-        		' <a href="#" class="table-address-update">Go Here</a></div>' +
-        		websiteHTML +
-        		showMoreInfo +
+        if (website) {
+          websiteHTML = '<div class="cell table-link"><a target="_blank" href="'+
+                           website +'">' + website + '</a></div>';
+        }
+
+        if (summary) {
+          summaryHTML = '<div class="table-more" style="display: none;">' +
+      			'<div class="cell table-info">' + summary + '</div>' +
+      		'</div>';
+          showMoreInfo = '<div class="table-toggle">More Information</div>';
+        }
+
+        if (image == 'True') {
+          imageInfo = '<img class="table-img" src="http://projectopensf.org/image?wikiurl=' + resourceURL + '" />';
+        }
+      
+        clickTracking = 'var trackingObject = ' +
+            '{\'Category\':\'Outbound Clicks\',' +
+             '\'Action\': \'Resource\',' +
+             '\'Label\': \'' + name + '\'};' +
+             'OP.Util.logEvent(trackingObject);';
+
+      	rowHTML = $(
+      	'<div class="row clearfix" id="' + id + '">' +
+      		'<div class="clearfix">' +
+      			'<span class="ui-button ui-button-add"><span></span>Add to My Guide</span>' +
+      			  '<div class="table-img-container">' +
+        		  imageInfo +
+        		  '</div>' +
+        		'<div class="table-cells">' +
+          		'<div class="cell table-name DIN-bold">' +
+          		'<a target="_blank" href="'+ OP.WIKI_URL + resourceURL + '" ' +
+          		'onClick="' + clickTracking + '">' +
+          		name + '</a></div>' +
+          		'<div class="cell table-services">' + categories + '</div>' +
+          		'<div class="cell table-address">' + address +
+          		' <a href="#" class="table-address-update">Go Here</a></div>' +
+          		websiteHTML +
+          		showMoreInfo +
+        		'</div>' +
       		'</div>' +
-    		'</div>' +
-    		summaryHTML +
-    	'</div>'
-    	).data('id', id).appendTo(_table);
+      		summaryHTML +
+      	'</div>'
+      	).data('id', id).appendTo(_table);
 
+      }
     };
     
     me.updateLocationLinks = function () {
@@ -630,8 +677,6 @@ OP.Data = (function () {
     		img = new Image(),
     		params,
     		markers = [];
-    		
-    	console.log('hi');
 
 		doc.write('<html><head><title>Print' +
 		          '<link type="text/css" rel="stylesheet" href="/static/global.css" />' +
@@ -664,11 +709,6 @@ for (var i in _filtered) {
 		doc.body.insertBefore(img, doc.body.childNodes[0]);
 */
 		
-    };
-    
-    me.receive = function (response) {
-        _cache = response;
-        me.filter();
     };
     
     return me;
@@ -1110,6 +1150,7 @@ $(function () {
 	           location.pathname != '/contact') {
 		OP.Util.setUp();
 	  OP.FusionMap.setUp();
+	  OP.Data.buildRows();
 	  OP.Cats.retrieve();
 	  OP.Util.setHeights();
 	  OP.Data.updateLocationLinks();
