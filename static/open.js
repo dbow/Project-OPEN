@@ -30,55 +30,21 @@ OP.FusionMap = (function () {
           type: 'poly'
           };
 
+    // TODO(dbow): Create the MarkerImage objects for all the custom markers
+    // once we have them.
+
+    /**
+     * Accessor function for the set of currently visible markers.
+     */
     me.getVisible = function () {
       return _visibleMarkers;
     };
 
-    /**
-     * Retrieves all resources within the current map bounds, and
-     * then calls OP.Data.receive with the results.
-     */
-    me.changeData = function () {
-
-      var mapBounds = map.getBounds();
-      if (mapBounds) {
-        _visibleMarkers = [];
-        for (i in _markers) {
-          var marker = _markers[i];
-          if (mapBounds.contains(marker.getPosition())) {
-            _visibleMarkers.push(marker.title);
-          }
-        }
-        OP.Data.filter();
-      }
-      
-      // TODO(dbow): REMOVE BELOW WHEN FUSIONTABLES NO LONGER NEEDED
-      /*
-      var whereClause = "";
-      if (mapBounds) {
-        whereClause += " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
-                       mapBounds.getSouthWest() +
-                       ", LATLNG" + mapBounds.getNorthEast() + "))";
-      }
-  
-      var queryText = "SELECT " +
-                      "'Name','ID','Website','Address','Categories','Summary'," +
-                      "'Image','Wiki URL','DisplayFilter','FilterCategories' " +
-                      "FROM " + OP.FUSION_ID + whereClause;
-      $.ajax({
-      	url: 'http://www.google.com/fusiontables/api/query',
-      	data: {sql: queryText},
-      	dataType: 'jsonp',
-      	jsonp: 'jsonCallback',
-      	success: OP.Data.receive
-      });
-      */
-        
-    };
 
     /**
-     * Creates a map centered on San Francisco and
-     * an event listener when the map goes idle that calls changeData().
+     * Creates a map centered on San Francisco, calls createLayer() to
+     * create the markers, and creates an event listener for when the map
+     * goes idle to call changeData().
      */
     me.createMap = function () {
 
@@ -89,7 +55,7 @@ OP.FusionMap = (function () {
         scrollwheel: false
       });
       
-      me.updateLayer(null);
+      me.createLayer();
 
       OP.Util.setHeights();
 
@@ -113,34 +79,13 @@ OP.FusionMap = (function () {
     };
     
     /**
-     * Updates the map to include the currently filtered set of resources.
-     * @param {Array.<string>} ids A list of resource IDs.
+     * Creates a marker on the map for each resource in OP.resourceList.
      */
-    me.updateLayer = function (ids) {
+    me.createLayer = function() {
       
-      var isUpdate = true;
-      if (!_markers) {
-        isUpdate = false;
         _markers = {};
-      }
-
-      for (var j in _markers) {
-        _markers[j].setMap(null);
-      }
-
-      var allResources = false;
-      if (!ids) {
-        ids = OP.resourceList;
-        allResources = true;
-      }
-
-      for (var id in ids) {
-        if (!allResources) {
-          id = ids[id];
-        }
-        if (isUpdate) {
-          _markers[id].setMap(map);
-        } else {
+        var ids = OP.resourceList;
+        for (var id in ids) {
           var resource = OP.resourceList[id];
           var resCoords = resource['GeocodedAddress'].split(',');
           var resourceLatLng = new google.maps.LatLng(parseFloat(resCoords[0]),
@@ -156,6 +101,72 @@ OP.FusionMap = (function () {
           }
           _markers[id] = marker;
           me.setupInfoWindow(marker, id);
+        }     
+    };
+    
+    
+    /**
+     * Creates a click listener (with a closure) to customize the content
+     * of the InfoWindow based on which marker is clicked.
+     * @param {google.maps.Marker} marker The marker that was clicked.
+     * @param {string} id The ID of the resource corresponding to the marker.
+     */
+    me.setupInfoWindow = function (marker, id) {
+      
+      google.maps.event.addListener(marker, 'click', function(e) {
+        _infoWindow.setContent(me.retrieveInfoWindowHTML(id));
+        _infoWindow.open(map, marker);
+        var trackingObject = {'Category':'Map',
+                              'Action': 'Marker Click',
+                              'Label': OP.resourceList[id]['Name']};
+        OP.Util.logEvent(trackingObject);
+      });
+
+    };
+
+    /**
+     * Sets the content of the InfoWindow to the clicked resource.
+     * @param {string} resourceId The ID of the resource clicked.
+     */
+    me.retrieveInfoWindowHTML = function (resourceId) {
+
+        var resource = OP.resourceList[resourceId];
+        var infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
+                           resource['Name'] + '</div>';
+        if (resource['Categories']) {
+          infoWindowHtml += '<div class="table-services">' +
+                               resource['Categories'] + '</br></div>';
+        }
+        if (resource['Address'] ||
+            resource['Phone'] ||
+            resource['Hours']) {
+          infoWindowHtml += '<div class="table-address">';
+          if (resource['Address']) {
+            infoWindowHtml += resource['Address'] + '</br>';
+          }
+          if (resource['Phone']) {
+            infoWindowHtml += resource['Phone'] + '</br>';
+          }
+          if (resource['Hours']) {
+            infoWindowHtml += resource['Hours'];
+          }
+          infoWindowHtml += '</div>';
+        }
+        return infoWindowHtml;
+    };
+
+   
+    /**
+     * Updates the map to include the currently filtered set of resources.
+     * @param {Array.<string>} ids A list of resource IDs.
+     */
+    me.updateLayer = function (ids) {
+ 
+      for (var id in _markers) {
+        if (ids.indexOf(id) != -1) {
+          _markers[id].setMap(map);
+        } else {
+          _markers[id].setMap(null);
         }        
       }
 
@@ -218,55 +229,49 @@ OP.FusionMap = (function () {
 
     };
     
+    
     /**
-     * Creates a click listener (with a closure) to customize the content
-     * of the InfoWindow based on which marker is clicked.
-     * @param {google.maps.Marker} marker The marker that was clicked.
-     * @param {string} id The ID of the resource corresponding to the marker.
+     * Retrieves all resources within the current map bounds, and
+     * then calls OP.Data.filter().
      */
-    me.setupInfoWindow = function (marker, id) {
+    me.changeData = function () {
+
+      var mapBounds = map.getBounds();
+      if (mapBounds) {
+        _visibleMarkers = [];
+        for (i in _markers) {
+          var marker = _markers[i];
+          if (mapBounds.contains(marker.getPosition())) {
+            _visibleMarkers.push(marker.title);
+          }
+        }
+        OP.Data.filter();
+      }
       
-      google.maps.event.addListener(marker, 'click', function(e) {
-        _infoWindow.setContent(me.retrieveInfoWindowHTML(id));
-        _infoWindow.open(map, marker);
-        var trackingObject = {'Category':'Map',
-                              'Action': 'Marker Click',
-                              'Label': OP.resourceList[id]['Name']};
-        OP.Util.logEvent(trackingObject);
+      // TODO(dbow): REMOVE BELOW WHEN FUSIONTABLES NO LONGER NEEDED
+      /*
+      var whereClause = "";
+      if (mapBounds) {
+        whereClause += " WHERE ST_INTERSECTS('Address', RECTANGLE(LATLNG" +
+                       mapBounds.getSouthWest() +
+                       ", LATLNG" + mapBounds.getNorthEast() + "))";
+      }
+  
+      var queryText = "SELECT " +
+                      "'Name','ID','Website','Address','Categories','Summary'," +
+                      "'Image','Wiki URL','DisplayFilter','FilterCategories' " +
+                      "FROM " + OP.FUSION_ID + whereClause;
+      $.ajax({
+      	url: 'http://www.google.com/fusiontables/api/query',
+      	data: {sql: queryText},
+      	dataType: 'jsonp',
+      	jsonp: 'jsonCallback',
+      	success: OP.Data.receive
       });
-
+      */
+        
     };
-
-    /**
-     * Sets the content of the InfoWindow to the clicked resource.
-     * @param {string} resourceId The ID of the resource clicked.
-     */
-    me.retrieveInfoWindowHTML = function (resourceId) {
-
-        var resource = OP.resourceList[resourceId];
-        var infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
-                           resource['Name'] + '</div>';
-        if (resource['Categories']) {
-          infoWindowHtml += '<div class="table-services">' +
-                               resource['Categories'] + '</br></div>';
-        }
-        if (resource['Address'] ||
-            resource['Phone'] ||
-            resource['Hours']) {
-          infoWindowHtml += '<div class="table-address">';
-          if (resource['Address']) {
-            infoWindowHtml += resource['Address'] + '</br>';
-          }
-          if (resource['Phone']) {
-            infoWindowHtml += resource['Phone'] + '</br>';
-          }
-          if (resource['Hours']) {
-            infoWindowHtml += resource['Hours'];
-          }
-          infoWindowHtml += '</div>';
-        }
-        return infoWindowHtml;
-    };
+    
 
     /**
      * Geolocates the provided string and updates the map to frame that location.
@@ -399,7 +404,6 @@ OP.Cats = (function () {
         	j++;
         }
         
-    	//$.tmpl(tmpl, categories).click(_click).appendTo("#cats");
     	cats.append(table).delegate('.cat', 'click', _click);
     	OP.Util.setHeights();
     };
@@ -445,13 +449,20 @@ OP.Data = (function () {
 
     var me = {},
     _table = $("#table").html(''),
-    _tmpl = $("#table").template('table'),
     _visible = [], // The IDs of the resources visible on the map.
     _filtered = [], // The IDs returned after category filtering.
-    _results = []; // The IDs returned after both category and search filtering.
-    //_ids = []; // The IDs of the _results rows.
-    
-    $("#table").html('');
+    _results = [], // The IDs returned after both category and search filtering.
+    _searchFields = ['Name',
+                    'Website',
+                    'Address',
+                    'Categories',
+                    'FilterCategories',
+                    'Summary',
+                    'Phone',
+                    'Email',
+                    'Languages'],
+    _numSearchFields = _searchFields.length;
+
 
     me.getTable = function () {
         return _table;
@@ -463,76 +474,10 @@ OP.Data = (function () {
     	return _results;
     };
     
-    me.performSearch = function () {
-
-      var search = $("#search-box"),
-          // rows = _filtered,
-          // _table = $("#table").html(''),
-          _ids = [],
-          searchPerformed = false,
-          searchQuery = search.val(),
-          searchFields = ['Name',
-                          'Website',
-                          'Address',
-                          'Categories',
-                          'FilterCategories',
-                          'Summary',
-                          'Phone',
-                          'Email',
-                          'Languages'],
-          numSearchFields = searchFields.length;
-
-      if (searchQuery && searchQuery !== search.attr('title')) {
-
-        _results = [];
-
-        for (var id in _filtered) {
-
-          var resourceId = _filtered[id],
-              rowMatches = false;
-          var searchRegex = new RegExp($('#search-box').val(), 'i');
-          var resource = OP.resourceList[resourceId];
-          for (i = 0; i < numSearchFields; i++) {
-            if (searchRegex.test(resource[searchFields[i]])) {
-              rowMatches = true;
-            }
-          }
-          if (rowMatches) {
-              _results.push(resourceId);
-          }
-        }
-
-      } else {
-        _results = _filtered;
-      }
-
-      $("#table").show();
-      OP.Util.setHeights();
-      me.displayRows(_results);
-      OP.FusionMap.updateLayer(_results);
-    };
-    
-    me.displayRows = function(resultSet) {
-      
-      if (resultSet) {
-        $('.row').each(function() {
-    		  $(this).addClass('invisible');
-    		});
-    		var resultLen = resultSet.length;
-        for (i = 0; i < resultLen; i++) {
-          $('#' + resultSet[i]).removeClass('invisible');
-        }
-      } else {
-        $('.row').each(function() {
-    		  $(this).removeClass('invisible');
-    		});
-      }
-      
-    };
     
     me.filter = function () {
+      
     	var cats = OP.Util.toArrayKeys(OP.Cats.getSelected()),
-    		// _table = $("#table").html(''),
     		catsKeyed = {};
 
         _visible = OP.FusionMap.getVisible();
@@ -551,20 +496,21 @@ OP.Data = (function () {
 
           //var geocoder = new google.maps.Geocoder();
           //var bounds = new google.maps.LatLngBounds();
-        
+
           for (var i in _visible) {
             var resourceId = _visible[i];
             var resource = OP.resourceList[resourceId];
             var inCategory = false;
-            var filteredCats = resource['FilterCategories'].toString().split(', ');
+            var filteredCats = resource['FilterCategories'].toString().split(',');
+
             var filteredLen = filteredCats.length;
             for (var j = 0; j < filteredLen; j++) {
               if(catsKeyed[filteredCats[j]]) {
                 inCategory = true;
               }
             }
-          	if (!cats || inCategory) {
-        		
+          	if (inCategory) {
+          	  
           		_filtered.push(resourceId);
         		
               //console.log('looking at address: ' + rows[i][3]);
@@ -589,6 +535,59 @@ OP.Data = (function () {
         //map.fitBounds(bounds);
 
     };
+    
+    
+    me.performSearch = function () {
+
+      var search = $("#search-box"),
+          searchQuery = search.val();
+
+      if (searchQuery && searchQuery !== search.attr('title')) {
+        console.log('search');
+
+        _results = [];
+
+        for (var id in _filtered) {
+
+          var resourceId = _filtered[id],
+              rowMatches = false;
+          var searchRegex = new RegExp($('#search-box').val(), 'i');
+          var resource = OP.resourceList[resourceId];
+          for (i = 0; i < _numSearchFields; i++) {
+            if (searchRegex.test(resource[_searchFields[i]])) {
+              rowMatches = true;
+            }
+          }
+          if (rowMatches) {
+            _results.push(resourceId);
+          }
+        }
+
+      } else {
+        _results = _filtered;
+      }
+
+      $("#table").show();
+      OP.Util.setHeights();
+      me.displayRows(_results);
+      OP.FusionMap.updateLayer(_results);
+    };
+    
+    
+    me.displayRows = function(resultSet) {
+      
+      $('.row').each(function() {
+        var row = $(this);
+        var rowId = row.attr('id');
+        if (resultSet.indexOf(rowId) != -1) {
+          row.removeClass('invisible');
+        } else {
+          row.addClass('invisible');
+        }
+  		});
+      
+    };
+    
     
     me.buildRows = function() {
       
@@ -712,6 +711,7 @@ for (var i in _filtered) {
     };
     
     return me;
+    
 }());
 
 
@@ -976,6 +976,7 @@ OP.Map = (function () {
 	return me;
 
 }());
+
 
 OP.Util = (function () {
 
