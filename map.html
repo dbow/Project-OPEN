@@ -73,13 +73,14 @@
 				<div class="resource-col">
 					{% for id, resource in resources %}
 						<div class="resource">
+							<div class="resource-num">{{resource.num}}.</div>
 							{% for prop, val in resource.items %}
 								{% if val %}
 									{% if prop == 'categories' %}
 										<div class="resource-prop-{{prop}}">{{ val|join:', ' }}</div>
-									{% else %}
+									{% else %}{% if prop != 'num' and prop != 'geo' %}
 										<div class="resource-prop-{{prop}}">{{val}}</div>
-									{% endif %}
+									{% endif %}{% endif %}
 								{% endif %}
 							{% endfor %}
 						</div>
@@ -88,13 +89,14 @@
 				<div class="resource-col">
 					{% for id, resource in resources2 %}
 						<div class="resource">
+							<div class="resource-num">{{resource.num}}.</div>
 							{% for prop, val in resource.items %}
 								{% if val %}
 									{% if prop == 'categories' %}
 										<div class="resource-prop-{{prop}}">{{ val|join:', ' }}</div>
-									{% else %}
+									{% else %}{% if prop != 'num' and prop != 'geo' %}
 										<div class="resource-prop-{{prop}}">{{val}}</div>
-									{% endif %}
+									{% endif %}{% endif %}
 								{% endif %}
 							{% endfor %}
 						</div>
