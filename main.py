@@ -1007,6 +1007,7 @@ class SavedMapHandler(webapp.RequestHandler):
 	           'phone': resource.phone,
 	           'hours': resource.hours,
 	           'website': resource.website,
+	           'geo': str(resource.geocoded_address),
 	       }
 	       
 	       for cat in resource.frontend_categories:

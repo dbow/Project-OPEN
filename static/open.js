@@ -888,7 +888,20 @@ OP.Map = (function () {
 		_hash = data.url;
 		_data = data;
 		
-		var queryText = "SELECT 'ID','GeocodedAddress' FROM " + OP.FUSION_ID + " WHERE ID IN (" + data.ids.join(',') + ")";
+		console.log(data);
+		
+		var markers = [];
+		var pos, lat, long,
+			latMax = -1000, latMin = 1000, longMax = -1000, longMin = 1000,
+			sw, ne, bounds,
+			map, ids, whereClause, layer,
+			_shape = {
+	          coord: [1, 1, 1, 20, 18, 20, 18 , 1],
+	          type: 'poly'
+	        };
+		
+		/*
+var queryText = "SELECT 'ID','GeocodedAddress' FROM " + OP.FUSION_ID + " WHERE ID IN (" + data.ids.join(',') + ")";
 	      $.ajax({
 	      	url: 'http://www.google.com/fusiontables/api/query',
 	      	data: {sql: queryText},
@@ -896,8 +909,65 @@ OP.Map = (function () {
 	      	jsonp: 'jsonCallback',
 	      	success: me.receive
 	      });
+*/
+
+		map = new google.maps.Map(document.getElementById('map'), {
+			center: sf_latlng,
+			zoom: 13,
+			disableDefaultUI: true,
+			draggable: false,
+			mapTypeId: 'roadmap',
+			scrollwheel: false
+		});
 	      
-	    
+	    // find bounds
+		for (var i in data.resources) {
+			pos = data.resources[i].geo.split(',');
+			
+			console.log(pos);
+			
+			if (pos[0] !== 'None') {
+				lat = parseFloat(pos[0]);
+				long = parseFloat(pos[1]);
+				
+				if (latMax < lat) {
+					latMax = lat;
+				}
+				if (latMin > lat) {
+					latMin = lat;
+				}
+				
+				if (longMax < long) {
+					longMax = long;
+				}
+				if (longMin > long) {
+					longMin = long;
+				}
+			}
+			
+			markers.push(pos);
+			
+			var resourceLatLng = new google.maps.LatLng(pos[0], pos[1]);
+			
+	          var marker = new google.maps.Marker({
+	              position: resourceLatLng,
+	              map: map,
+	              shape: _shape,
+	              title: i,
+	          });
+	          
+	          if (data.resources[i].DisplayFilter && data.resources[i].DisplayFilter == 'Other') {
+	            marker.setIcon(_image);
+	          }
+		}
+		
+		if (latMin !== 1000) {
+			sw = new google.maps.LatLng(latMin, longMin);
+			ne = new google.maps.LatLng(latMax, longMax);
+			bounds = new google.maps.LatLngBounds(sw, ne);
+			
+			map.fitBounds(bounds);
+		}
 	};
 	
 	me.receive = function (data) {
@@ -905,8 +975,6 @@ OP.Map = (function () {
 			latMax = -1000, latMin = 1000, longMax = -1000, longMin = 1000,
 			sw, ne, bounds,
 			map, ids, whereClause, layer;
-		
-		console.log(data);
 		
 		// find bounds
 		for (var i in data.table.rows) {
