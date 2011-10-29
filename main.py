@@ -996,6 +996,8 @@ class SavedMapHandler(webapp.RequestHandler):
    
    categories = {}
    
+   i = 1;
+   
    for resourceId in ids:
        resource = Resource().get_by_key_name(resourceId)
        if resource:
@@ -1008,7 +1010,10 @@ class SavedMapHandler(webapp.RequestHandler):
 	           'hours': resource.hours,
 	           'website': resource.website,
 	           'geo': str(resource.geocoded_address),
+	           'num': i,
 	       }
+	       
+	       i += 1
 	       
 	       for cat in resource.frontend_categories:
 	           categories[cat] = cat

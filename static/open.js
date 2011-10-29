@@ -921,10 +921,9 @@ var queryText = "SELECT 'ID','GeocodedAddress' FROM " + OP.FUSION_ID + " WHERE I
 		});
 	      
 	    // find bounds
-		for (var i in data.resources) {
-			pos = data.resources[i].geo.split(',');
-			
-			console.log(pos);
+		for (var i = 0; i < data.ids.length; i++) {
+			var id = data.ids[i];
+			pos = data.resources[id].geo.split(',');
 			
 			if (pos[0] !== 'None') {
 				lat = parseFloat(pos[0]);
@@ -945,21 +944,21 @@ var queryText = "SELECT 'ID','GeocodedAddress' FROM " + OP.FUSION_ID + " WHERE I
 				}
 			}
 			
-			markers.push(pos);
-			
 			var resourceLatLng = new google.maps.LatLng(pos[0], pos[1]);
 			
 	          var marker = new google.maps.Marker({
 	              position: resourceLatLng,
 	              map: map,
 	              shape: _shape,
-	              title: i,
+	              title: id,
 	          });
 	          
-	          if (data.resources[i].DisplayFilter && data.resources[i].DisplayFilter == 'Other') {
-	            marker.setIcon(_image);
-	          }
+	            marker.setIcon('http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld=' + (i + 1) + '|FF0000|000000');
+	          
+	        markers.push(marker);
 		}
+		
+		console.log(markers);
 		
 		if (latMin !== 1000) {
 			sw = new google.maps.LatLng(latMin, longMin);
