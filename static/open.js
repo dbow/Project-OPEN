@@ -13,25 +13,56 @@ var sf_latlng = new google.maps.LatLng(37.77493,-122.419416);
 /**
  * The namespace for code creating and updating the main resource map.
  */
-OP.FusionMap = (function () {
+OP.ResourceMap = (function () {
 
     var me = {},
         _targetLocation,
-        _markers, // All markers created originally.
+        _markers = {}, // All markers created originally.
         _visibleMarkers = [], // The IDs of currently visible markers.
         _infoWindow = new google.maps.InfoWindow({}),
-        _image = new google.maps.MarkerImage( // The test custom marker icon.
-          '/static/img/test_icon.png',
-          new google.maps.Size(20, 23),
-          new google.maps.Point(0,0),
-          new google.maps.Point(10, 23)),
+        _iconSize = new google.maps.Size(27, 20),
+        _iconPoint1 = new google.maps.Point(0,0),
+        _iconPoint2 = new google.maps.Point(10, 27),
+        _imgLoc = '/static/img/',
+        _employmentImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_employment.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
+        _governmentImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_government.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
+        _housingImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_housing.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
+        _legalImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_legal.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
+        _medicalImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_medical.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
+        _otherImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_other.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
+        _specialgroupsImage = new google.maps.MarkerImage(
+          _imgLoc + '27x20_specialgroups.png',
+          _iconSize,
+          _iconPoint1,
+          _iconPoint2),
         _shape = {
-          coord: [1, 1, 1, 20, 18, 20, 18 , 1],
+          coord: [3, 1, 25, 1, 25, 17, 3 , 17, 3, 1],
           type: 'poly'
           };
-
-    // TODO(dbow): Create the MarkerImage objects for all the custom markers
-    // once we have them.
 
     /**
      * Accessor function for the set of currently visible markers.
@@ -47,6 +78,8 @@ OP.FusionMap = (function () {
      * goes idle to call changeData().
      */
     me.createMap = function () {
+      
+      var trackingObject;
 
       map = new google.maps.Map(document.getElementById('map'), {
         center: sf_latlng,
@@ -60,18 +93,18 @@ OP.FusionMap = (function () {
       OP.Util.setHeights();
 
       google.maps.event.addListener(map, 'idle', function() {
-        me.changeData();
         if(!initialBounds) {
           initialBounds = map.getBounds();
         }
+        me.changeData();
       });
       google.maps.event.addListener(map, 'dragend', function() {
-        var trackingObject = {'Category':'Map',
+        trackingObject = {'Category':'Map',
                               'Action': 'Drag'};
         OP.Util.logEvent(trackingObject);
       });
       google.maps.event.addListener(map, 'zoom_changed', function() {
-        var trackingObject = {'Category':'Map',
+        trackingObject = {'Category':'Map',
                               'Action': 'Zoom'};
         OP.Util.logEvent(trackingObject);
       });
@@ -83,22 +116,48 @@ OP.FusionMap = (function () {
      */
     me.createLayer = function() {
       
-        _markers = {};
-        var ids = OP.resourceList;
-        for (var id in ids) {
-          var resource = OP.resourceList[id];
-          var resCoords = resource['GeocodedAddress'].split(',');
-          var resourceLatLng = new google.maps.LatLng(parseFloat(resCoords[0]),
-                                                      parseFloat(resCoords[1]));
-          var marker = new google.maps.Marker({
+      var resource,
+          resCoords,
+          resourceLatLng,
+          marker;
+
+        for (var id in OP.resourceList) {
+          resource = OP.resourceList[id];
+          resCoords = resource['GeocodedAddress'].split(',');
+          resourceLatLng = new google.maps.LatLng(parseFloat(resCoords[0]),
+                                                  parseFloat(resCoords[1]));
+          marker = new google.maps.Marker({
               position: resourceLatLng,
               map: map,
               shape: _shape,
               title: id,
           });
-          if (resource['DisplayFilter'] == 'Other') {
-            marker.setIcon(_image);
+          
+          
+          switch (resource['DisplayFilter']) {
+             case 'Employment':
+                marker.setIcon(_employmentImage);
+                break;
+             case 'Government':
+                marker.setIcon(_governmentImage);
+                break;
+             case 'Housing':
+                marker.setIcon(_housingImage);
+                break;
+             case 'Legal':
+                marker.setIcon(_legalImage);
+                break;
+             case 'Medical':
+                marker.setIcon(_medicalImage);
+                break;
+             case 'Other':
+                marker.setIcon(_otherImage);
+                break;
+             case 'Special Groups':
+                marker.setIcon(_specialgroupsImage);
+                break;
           }
+
           _markers[id] = marker;
           me.setupInfoWindow(marker, id);
         }     
@@ -113,12 +172,14 @@ OP.FusionMap = (function () {
      */
     me.setupInfoWindow = function (marker, id) {
       
+      var trackingObject;
+      
       google.maps.event.addListener(marker, 'click', function(e) {
         _infoWindow.setContent(me.retrieveInfoWindowHTML(id));
         _infoWindow.open(map, marker);
-        var trackingObject = {'Category':'Map',
-                              'Action': 'Marker Click',
-                              'Label': OP.resourceList[id]['Name']};
+        trackingObject = {'Category':'Map',
+                          'Action': 'Marker Click',
+                          'Label': OP.resourceList[id]['Name']};
         OP.Util.logEvent(trackingObject);
       });
 
@@ -130,9 +191,10 @@ OP.FusionMap = (function () {
      */
     me.retrieveInfoWindowHTML = function (resourceId) {
 
-        var resource = OP.resourceList[resourceId];
-        var infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
-                           resource['Name'] + '</div>';
+        var resource = OP.resourceList[resourceId],
+            infoWindowHtml = '<div style="color:#e4542e; font-size:18px">' +
+                             resource['Name'] + '</div>';
+        
         if (resource['Categories']) {
           infoWindowHtml += '<div class="table-services">' +
                                resource['Categories'] + '</br></div>';
@@ -155,13 +217,13 @@ OP.FusionMap = (function () {
         return infoWindowHtml;
     };
 
-   
+
     /**
      * Updates the map to include the currently filtered set of resources.
      * @param {Array.<string>} ids A list of resource IDs.
      */
     me.updateLayer = function (ids) {
- 
+
       for (var id in _markers) {
         if (ids.indexOf(id) != -1) {
           _markers[id].setMap(map);
@@ -236,11 +298,13 @@ OP.FusionMap = (function () {
      */
     me.changeData = function () {
 
-      var mapBounds = map.getBounds();
+      var mapBounds = map.getBounds(),
+          marker;
+
       if (mapBounds) {
         _visibleMarkers = [];
         for (i in _markers) {
-          var marker = _markers[i];
+          marker = _markers[i];
           if (mapBounds.contains(marker.getPosition())) {
             _visibleMarkers.push(marker.title);
           }
@@ -358,11 +422,10 @@ OP.FusionMap = (function () {
 
 
 OP.Cats = (function () {
-    var me = {},
     
+    var me = {},
     // functions
     _click,
-    
     // data
     _selected = {};
     
@@ -448,7 +511,7 @@ OP.Cats = (function () {
 OP.Data = (function () {
 
     var me = {},
-    _table = $("#table").html(''),
+    _table = $("#table"),
     _visible = [], // The IDs of the resources visible on the map.
     _filtered = [], // The IDs returned after category filtering.
     _results = [], // The IDs returned after both category and search filtering.
@@ -480,14 +543,13 @@ OP.Data = (function () {
     	var cats = OP.Util.toArrayKeys(OP.Cats.getSelected()),
     		catsKeyed = {};
 
-        _visible = OP.FusionMap.getVisible();
-        
+        _visible = OP.ResourceMap.getVisible();
+
         if (cats && cats.length) {
         	for (i = 0; i < cats.length; i++) {
         	  catsKeyed[cats[i]] = 1;
         	}
         	_filtered = [];
-        	_table.hide();
         	
           /*
             TODO(dbow): If we decide to have search results dictate the bounds of
@@ -543,7 +605,6 @@ OP.Data = (function () {
           searchQuery = search.val();
 
       if (searchQuery && searchQuery !== search.attr('title')) {
-        console.log('search');
 
         _results = [];
 
@@ -567,24 +628,26 @@ OP.Data = (function () {
         _results = _filtered;
       }
 
-      $("#table").show();
-      OP.Util.setHeights();
       me.displayRows(_results);
-      OP.FusionMap.updateLayer(_results);
+      OP.ResourceMap.updateLayer(_results);
+      OP.Util.setHeights();
     };
     
     
     me.displayRows = function(resultSet) {
       
+      _table.hide();
+
       $('.row').each(function() {
         var row = $(this);
         var rowId = row.attr('id');
         if (resultSet.indexOf(rowId) != -1) {
-          row.removeClass('invisible');
+          row.show();
         } else {
-          row.addClass('invisible');
+          row.hide();
         }
   		});
+  		_table.show();
       
     };
     
@@ -662,7 +725,7 @@ OP.Data = (function () {
       $('a.table-address-update').live('click', function(e) {
         e.preventDefault();
         var address = $(this).parent().text().replace('Go Here','');
-        OP.FusionMap.updateMap(address);
+        OP.ResourceMap.updateMap(address);
         var trackingObject = {'Category':'Map',
                               'Action': 'Go here',
                               'Label': address};
@@ -875,7 +938,7 @@ OP.Map = (function () {
 		OP.Util.setHeights();
 		
 		google.maps.event.addListener(map, 'idle', function() {
-			OP.FusionMap.changeData();
+			OP.ResourceMap.changeData();
 		
 			if(!initial_bounds) {
 				initial_bounds = map.getBounds();
@@ -1150,7 +1213,7 @@ $(function () {
 	           location.pathname != '/faq' &&
 	           location.pathname != '/contact') {
 		OP.Util.setUp();
-	  OP.FusionMap.setUp();
+	  OP.ResourceMap.setUp();
 	  OP.Data.buildRows();
 	  OP.Cats.retrieve();
 	  OP.Util.setHeights();
