@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 	<head>
-		<title>projectOPEN San Francisco - {% ifequal page.page_url 'contact' %}Contact{% endifequal %}{% ifequal page.page_url 'faq' %}FAQ{% endifequal %}{% ifequal page.page_url 'about' %}About{% endifequal %}</title>
+		<title>projectOPEN San Francisco - {% if page.page_url == 'contact' %}Contact{% endif %}{% if page.page_url == 'faq' %}FAQ{% endif %}{% if page.page_url == 'about' %}About{% endif %}</title>
 		<meta name="description" content="projectOPEN connects the community to resources in San Francisco." />
 		
 		<meta property="og:title" content="projectOPEN San Francisco" /> 
@@ -33,9 +33,9 @@
 			<div id="header" class="clearfix">
 				<h1><a href="/"><img alt="projectOPEN" src="/static/img/projectopen.png" /></a></h1>
 				<ul id="nav" class="DIN-bold">
-					<li {% ifequal page.page_url 'contact' %}class="current"{% endifequal %}><a href="/contact">Contact</a></li>
-					<li {% ifequal page.page_url 'faq' %}class="current"{% endifequal %}><a href="/faq">FAQ</a></li>
-					<li {% ifequal page.page_url 'about' %}class="current"{% endifequal %}><a href="/about">About</a></li>
+					<li {% if page.page_url == 'contact' %}class="current"{% endif %}><a href="/contact">Contact</a></li>
+					<li {% if page.page_url == 'faq' %}class="current"{% endif %}><a href="/faq">FAQ</a></li>
+					<li {% if page.page_url == 'about' %}class="current"{% endif %}><a href="/about">About</a></li>
 				</ul>
 			</div>
 

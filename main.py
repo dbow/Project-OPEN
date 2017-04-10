@@ -15,30 +15,33 @@
 # limitations under the License.
 #
 
-import webapp2
-import csv
 import os
-from google.appengine.dist import use_library
-use_library('django', '1.2')
+import webapp2
+import jinja2
+
+import csv
 import logging
 import hashlib
 import httplib2
 import pickle
 import time
 import urllib
+import json
 from xml.dom.minidom import parseString
 from authorization.oauth import OAuth
 from sql.sqlbuilder import SQL
 import ftclient
 
-from google.appengine.ext import webapp, db
-from google.appengine.ext.webapp import template
+from google.appengine.ext import db
 from google.appengine.api import images
 from google.appengine.api import taskqueue
 from google.appengine.api import memcache
 from google.appengine.api import users
 
-from django.utils import simplejson
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
+    extensions=['jinja2.ext.autoescape'],
+    autoescape=True)
 
 WIKI_URL = 'http://sfhomeless.wikia.com/'
 
@@ -686,8 +689,8 @@ class WikiStatusHandler(webapp2.RequestHandler):
         'excluded_resources': excluded_resources,
         'deleted_resources': deleted_resources,
     }
-    path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
-    self.response.out.write(template.render(path, template_values))
+    template = JINJA_ENVIRONMENT.get_template('wikistatus.html')
+    self.response.write(template.render(template_values))
 
   def post(self):
     """Updates the Status of the selected resource."""
@@ -913,11 +916,11 @@ class MainHandler(webapp2.RequestHandler):
     category_map = retrieveCategoryMapping()
 
     template_values = {
-        'resources': simplejson.dumps(resources),
+        'resources': json.dumps(resources),
         'category_map': category_map,
     }
-    path = os.path.join(os.path.dirname(__file__), 'index.html')
-    self.response.out.write(template.render(path, template_values))
+    template = JINJA_ENVIRONMENT.get_template('index.html')
+    self.response.write(template.render(template_values))
 
 
 # Removed for actual launch.
@@ -925,9 +928,8 @@ class SplashHandler(webapp2.RequestHandler):
   """A temporary splash page to hold a place for the site."""
 
   def get(self):
-
-    path = os.path.join(os.path.dirname(__file__), 'splash.html')
-    self.response.out.write(template.render(path, {}))
+    template = JINJA_ENVIRONMENT.get_template('splash.html')
+    self.response.write(template.render({}))
 
 
 class GetImageHandler(webapp2.RequestHandler):
@@ -970,7 +972,7 @@ class SaveHandler(webapp2.RequestHandler):
       saved_map.put()
       
     #self.response.headers.add_header('content-type', 'text/json')
-    self.response.out.write(simplejson.dumps(hashed_ids))
+    self.response.out.write(json.dumps(hashed_ids))
 
 
 class SavedMapHandler(webapp2.RequestHandler):
@@ -1058,7 +1060,7 @@ class SavedMapHandler(webapp2.RequestHandler):
    resources1 = resources1[0 : half]
    
    template_values = {
-       'json': simplejson.dumps({
+       'json': json.dumps({
            'ids': ids,
            'resources': resources,
            'name': saved_map.name,
@@ -1069,8 +1071,8 @@ class SavedMapHandler(webapp2.RequestHandler):
        'ids': ids,
        'cats': ", ".join(categories.keys())
    }
-   path = os.path.join(os.path.dirname(__file__), 'map.html')
-   self.response.out.write(template.render(path, template_values))
+   template = JINJA_ENVIRONMENT.get_template('map.html')
+   self.response.write(template.render(template_values))
 
 
 class StaticHandler(webapp2.RequestHandler):
@@ -1090,8 +1092,8 @@ class StaticHandler(webapp2.RequestHandler):
       template_values = {
           'page': static_page,
       }
-      path = os.path.join(os.path.dirname(__file__), 'static.html')
-      self.response.out.write(template.render(path, template_values))
+      template = JINJA_ENVIRONMENT.get_template('static.html')
+      self.response.write(template.render(template_values))
 
 
 class SetStaticHandler(webapp2.RequestHandler):
