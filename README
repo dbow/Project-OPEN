@@ -1,0 +1,13 @@
+projectOPEN SF
+
+[www.projectopensf.org]
+
+ProjectOPEN is a website that maps and displays open resources
+in the city of San Francisco, in partnership with sfhomeless.net.
+
+The site uses Google App Engine, the MediaWiki API, and the Google Maps
+JavaScript API v3, to pull in and parse data on homeless resources and present
+the resources in an interactive map.  Users can then create and print their
+own custom maps with just the resources they are interested in.
+
+History of projectOPEN: http://www.brutelabs.org/projectopen.html

@@ -1,7 +1,10 @@
-application: project-open
-version: 4
-runtime: python
+runtime: python27
 api_version: 1
+threadsafe: true
+
+libraries:
+- name: webapp2
+  version: 2.5.2
 
 handlers:
 
@@ -13,15 +16,13 @@ handlers:
   static_dir: static
 
 - url: /task.*
-  script: main.py
+  script: main.app
   login: admin
 
 - url: /admin.*
-  script: main.py
+  script: main.app
   login: admin
 
 - url: .*
-  script: main.py
+  script: main.app
 
-builtins:
-- datastore_admin: on

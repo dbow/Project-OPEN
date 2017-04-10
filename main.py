@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+import webapp2
 import csv
 import os
 from google.appengine.dist import use_library
@@ -31,12 +32,11 @@ from sql.sqlbuilder import SQL
 import ftclient
 
 from google.appengine.ext import webapp, db
-from google.appengine.ext.webapp import util, template
+from google.appengine.ext.webapp import template
 from google.appengine.api import images
 from google.appengine.api import taskqueue
 from google.appengine.api import memcache
 from google.appengine.api import users
-from google.appengine.api import quota
 
 from django.utils import simplejson
 
@@ -520,7 +520,7 @@ def updateFusionTableRow(wikiurl):
       raise EnvironmentError(update)
 
 
-class WikiSyncTaskHandler(webapp.RequestHandler):
+class WikiSyncTaskHandler(webapp2.RequestHandler):
   """TODO."""
 
   def post(self):
@@ -531,7 +531,7 @@ class WikiSyncTaskHandler(webapp.RequestHandler):
     syncResource(resource_page.encode('utf-8'), resource_id)
 
 
-class WikiSyncLauncher(webapp.RequestHandler):
+class WikiSyncLauncher(webapp2.RequestHandler):
   """TODO."""
 
   def get(self):
@@ -547,7 +547,7 @@ class WikiSyncLauncher(webapp.RequestHandler):
     self.response.out.write(str(num) + ' tasks launched.')
 
 
-class GeocodingSyncTaskHandler(webapp.RequestHandler):
+class GeocodingSyncTaskHandler(webapp2.RequestHandler):
   """TODO."""
 
   def post(self):
@@ -580,7 +580,7 @@ class GeocodingSyncTaskHandler(webapp.RequestHandler):
         raise EnvironmentError(status.data)
 
 
-class GeocodingSyncLauncher(webapp.RequestHandler):
+class GeocodingSyncLauncher(webapp2.RequestHandler):
   """TODO."""
 
   def get(self):
@@ -597,7 +597,7 @@ class GeocodingSyncLauncher(webapp.RequestHandler):
     self.response.out.write(str(num) + ' tasks launched.')
 
 
-class FusionTablesCredentialsHandler(webapp.RequestHandler):
+class FusionTablesCredentialsHandler(webapp2.RequestHandler):
   """Retrieves an access token for talking to the Fusion tables API."""
 
   def get(self):
@@ -633,7 +633,7 @@ class FusionTablesCredentialsHandler(webapp.RequestHandler):
       self.redirect('/admin/fusionsync')
 
 
-class FusionTablesSyncTaskHandler(webapp.RequestHandler):
+class FusionTablesSyncTaskHandler(webapp2.RequestHandler):
   """A task to update a FusionTables row for a given wiki page."""
 
   def post(self):
@@ -643,7 +643,7 @@ class FusionTablesSyncTaskHandler(webapp.RequestHandler):
     updateFusionTableRow(wikiurl.encode('utf-8'))
 
 
-class FusionTablesSyncLauncher(webapp.RequestHandler):
+class FusionTablesSyncLauncher(webapp2.RequestHandler):
   """Initiates a complete sync of datastore to FusionTables."""
 
   def get(self):
@@ -669,13 +669,12 @@ class FusionTablesSyncLauncher(webapp.RequestHandler):
       self.response.out.write(str(num) + ' tasks launched.')
 
 
-class WikiStatusHandler(webapp.RequestHandler):
+class WikiStatusHandler(webapp2.RequestHandler):
   """A development page to display all synced resources."""
 
   def get(self):
     """Presents Active and Incomplete resources."""
 
-    start = quota.get_request_cpu_usage()
     complete_resources = Resource().all().filter('status =', 'Active')
     incomplete_resources = Resource().all().filter('status =', 'Incomplete')
     excluded_resources = Resource().all().filter('status =', 'Excluded')
@@ -687,15 +686,12 @@ class WikiStatusHandler(webapp.RequestHandler):
         'excluded_resources': excluded_resources,
         'deleted_resources': deleted_resources,
     }
-    end = quota.get_request_cpu_usage()
-    logging.info('get request cost %d megacycles.' % (end - start))
     path = os.path.join(os.path.dirname(__file__), 'wikistatus.html')
     self.response.out.write(template.render(path, template_values))
 
   def post(self):
     """Updates the Status of the selected resource."""
 
-    start = quota.get_request_cpu_usage()
     wikiurl = self.request.get('wiki_url')
     action = self.request.get('action')
     if action == 'Update':
@@ -710,12 +706,10 @@ class WikiStatusHandler(webapp.RequestHandler):
       wikiurl_encoded = wikiurl.encode('utf-8')
       updateFusionTableRow(wikiurl_encoded)
 
-    end = quota.get_request_cpu_usage()
-    logging.info('post request cost %d megacycles.' % (end - start))
     self.redirect('/admin/wikistatus')
 
 
-class CategoryImageUploader(webapp.RequestHandler):
+class CategoryImageUploader(webapp2.RequestHandler):
   """TODO."""
   
   def get(self):
@@ -758,7 +752,7 @@ class CategoryImageUploader(webapp.RequestHandler):
       parent_category.put()
 
 
-class CategorySyncTaskHandler(webapp.RequestHandler):
+class CategorySyncTaskHandler(webapp2.RequestHandler):
   """Traverses Resources to update FrontendCategories entities."""
 
   def post(self):
@@ -804,7 +798,7 @@ def getAllCategories(category_list, continue_query=None):
   return category_list
 
 
-class CategorySyncLauncher(webapp.RequestHandler):
+class CategorySyncLauncher(webapp2.RequestHandler):
   """TODO."""
 
   def get(self):
@@ -886,7 +880,7 @@ def setCategoryMapping():
   category_maps.put()
   
 
-class MainHandler(webapp.RequestHandler):
+class MainHandler(webapp2.RequestHandler):
   """The main site page providing a frontend to browse the resources."""
 
   def get(self):
@@ -927,7 +921,7 @@ class MainHandler(webapp.RequestHandler):
 
 
 # Removed for actual launch.
-class SplashHandler(webapp.RequestHandler):
+class SplashHandler(webapp2.RequestHandler):
   """A temporary splash page to hold a place for the site."""
 
   def get(self):
@@ -936,7 +930,7 @@ class SplashHandler(webapp.RequestHandler):
     self.response.out.write(template.render(path, {}))
 
 
-class GetImageHandler(webapp.RequestHandler):
+class GetImageHandler(webapp2.RequestHandler):
   """TODO."""
   def get(self):
     """TODO."""
@@ -959,7 +953,7 @@ class GetImageHandler(webapp.RequestHandler):
       self.response.out.write(None)
 
 
-class SaveHandler(webapp.RequestHandler):
+class SaveHandler(webapp2.RequestHandler):
   """TODO."""
 
   def post(self):
@@ -979,7 +973,7 @@ class SaveHandler(webapp.RequestHandler):
     self.response.out.write(simplejson.dumps(hashed_ids))
 
 
-class SavedMapHandler(webapp.RequestHandler):
+class SavedMapHandler(webapp2.RequestHandler):
  """TODO."""
 
  def get(self):
@@ -1079,7 +1073,7 @@ class SavedMapHandler(webapp.RequestHandler):
    self.response.out.write(template.render(path, template_values))
 
 
-class StaticHandler(webapp.RequestHandler):
+class StaticHandler(webapp2.RequestHandler):
   """Constructs static text pages for About, FAQ, and Contact."""
 
   def get(self):
@@ -1100,7 +1094,7 @@ class StaticHandler(webapp.RequestHandler):
       self.response.out.write(template.render(path, template_values))
 
 
-class SetStaticHandler(webapp.RequestHandler):
+class SetStaticHandler(webapp2.RequestHandler):
   """TODO."""
   
   def get(self):
@@ -1152,30 +1146,25 @@ class SetStaticHandler(webapp.RequestHandler):
       self.redirect('/admin/static')
 
 
-def main():
-    application = webapp.WSGIApplication(
-        [('/', MainHandler),
-         ('/about', StaticHandler),
-         ('/contact', StaticHandler),
-         ('/faq', StaticHandler),
-         ('/image', GetImageHandler),
-         ('/save', SaveHandler),
-         ('/map', SavedMapHandler),
-         ('/admin/wikistatus', WikiStatusHandler),  #admin-only.
-         ('/admin/static', SetStaticHandler), #admin-only.
-         ('/admin/categoryimage', CategoryImageUploader), #admin-only.
-         ('/admin/category', CategorySyncLauncher),  #admin-only.
-         ('/task/category', CategorySyncTaskHandler), #admin-only.
-         ('/admin/wikisync', WikiSyncLauncher),  #admin-only.
-         ('/task/wikisync', WikiSyncTaskHandler),  #admin-only.
-         ('/admin/geosync', GeocodingSyncLauncher),   #admin-only.
-         ('/task/geosync', GeocodingSyncTaskHandler),   #admin-only.
-         ('/admin/fusioncredentials', FusionTablesCredentialsHandler),  #admin-only.
-         ('/admin/fusionsync', FusionTablesSyncLauncher),  #admin-only.
-         ('/task/fusionsync', FusionTablesSyncTaskHandler)],  #admin-only.
-        debug=True)
-    util.run_wsgi_app(application)
+app = webapp2.WSGIApplication(
+    [('/', MainHandler),
+     ('/about', StaticHandler),
+     ('/contact', StaticHandler),
+     ('/faq', StaticHandler),
+     ('/image', GetImageHandler),
+     ('/save', SaveHandler),
+     ('/map', SavedMapHandler),
+     ('/admin/wikistatus', WikiStatusHandler),  #admin-only.
+     ('/admin/static', SetStaticHandler), #admin-only.
+     ('/admin/categoryimage', CategoryImageUploader), #admin-only.
+     ('/admin/category', CategorySyncLauncher),  #admin-only.
+     ('/task/category', CategorySyncTaskHandler), #admin-only.
+     ('/admin/wikisync', WikiSyncLauncher),  #admin-only.
+     ('/task/wikisync', WikiSyncTaskHandler),  #admin-only.
+     ('/admin/geosync', GeocodingSyncLauncher),   #admin-only.
+     ('/task/geosync', GeocodingSyncTaskHandler),   #admin-only.
+     ('/admin/fusioncredentials', FusionTablesCredentialsHandler),  #admin-only.
+     ('/admin/fusionsync', FusionTablesSyncLauncher),  #admin-only.
+     ('/task/fusionsync', FusionTablesSyncTaskHandler)],  #admin-only.
+    debug=True)
 
-
-if __name__ == '__main__':
-    main()
